@@ -19,7 +19,7 @@ public class TetrisActivity extends Activity {
 		setContentView(R.layout.activity_tetris);
 		_tetrisView = (TetrisView) findViewById(R.id.tetrisActivity);
 		// can also let TetrisActivity implements OnGestureListener, but that
-		// will leave some blank methods
+		// will leave some blank methods 
 		_gesDect = new GestureDetector(this, new TetrisGestureListener(this));
 	}
 

@@ -8,7 +8,7 @@ package com.ml.gb.tetris;
  * 
  */
 public class Block {
-	// hex value for each letter:
+	// hex value for each letter: 
 	/*
 	 * L: 
 	 * 0x4460

@@ -52,7 +52,7 @@ public class TetrisGestureListener extends SimpleOnGestureListener {
 			else
 				onSwipeLeft();
 		}
-		// might be swiping up/down
+		// might be swiping up/down 
 		else {
 			// if (Math.abs(diffY) > SWIPE_THRESHOLD
 			// && velocityY > SWIPE_VELOCITY_THRESHOLD) {

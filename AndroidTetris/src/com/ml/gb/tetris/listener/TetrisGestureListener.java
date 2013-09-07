@@ -11,7 +11,7 @@ public class TetrisGestureListener extends SimpleOnGestureListener {
 	private TetrisActivity _act;
 	private TetrisView _tetrisView;
 
-	// we need max sensibility 
+	// we need max sensibility
 	public static final int SWIPE_THRESHOLD = 100;
 	public static final int SWIPE_VELOCITY_THRESHOLD = 50;
 
@@ -24,12 +24,13 @@ public class TetrisGestureListener extends SimpleOnGestureListener {
 	public boolean onDoubleTap(MotionEvent e) {
 		Toast.makeText(_act, "doubleTap!!", Toast.LENGTH_SHORT).show();
 		_tetrisView.rotate();
-		return true;
+		return false;
 	}
 
 	@Override
 	public boolean onSingleTapConfirmed(MotionEvent e) {
-		Toast.makeText(_act, "singleTap!!", Toast.LENGTH_SHORT).show();
+		// Toast.makeText(_act, "singleTap!!", Toast.LENGTH_SHORT).show();
+		// _tetrisView.rotate();
 		return super.onSingleTapConfirmed(e);
 	}
 

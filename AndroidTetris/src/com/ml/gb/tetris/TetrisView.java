@@ -20,7 +20,7 @@ import com.ml.gb.R;
 
 /**
  * Tetris will be represented by a 18 * 10 color
- *  
+ * 
  * @author flamearrow
  * 
  */
@@ -32,6 +32,7 @@ public class TetrisView extends SurfaceView implements Callback {
 	private static final int SQUARE_EDGE_WIDTH = 2;
 	private static final int SQUARE_EDGE_COLOR = Color.YELLOW;
 	private static final int SEPARATOR_COLOR = Color.DKGRAY;
+	private static final int SCORE_BAR_COLOR = Color.RED;
 	private static final double GOLDEN_RATIO = 0.618;
 	private static final int INITIAL_BLOCK_COLOR = Color.GRAY;
 
@@ -44,7 +45,7 @@ public class TetrisView extends SurfaceView implements Callback {
 	private int _screenWidth;
 	private int _screenHeight;
 
-	// Paint object si used to draw stuff
+	// Paint object is used to draw stuff
 	private Paint _backgroundPaint;
 	private Paint _gameMatrixPaint;
 	private Paint _previewMatrixPaint;
@@ -53,6 +54,9 @@ public class TetrisView extends SurfaceView implements Callback {
 
 	private int _level;
 	private int _score;
+	private int _scoreToLevelUp;
+	// score to level up for each level is _level * multiplier
+	private static final int SCORE_MULTIPLIER = 10;
 
 	private boolean _justStart;
 
@@ -202,6 +206,7 @@ public class TetrisView extends SurfaceView implements Callback {
 		if (!droppedOneLine) {
 			// then check if we need to remove lines from bottom to
 			// _currentHeight
+			int rowRemoved = 0;
 			int currentRow = 0;
 			int currentBottom = Integer.MAX_VALUE;
 			here: while (currentRow < MATRIX_HEIGHT) {
@@ -225,8 +230,31 @@ public class TetrisView extends SurfaceView implements Callback {
 					currentBottom = currentRow;
 				// clear the row
 				clearRow(_gameMatrix, currentRow);
+				rowRemoved++;
 				currentRow++;
 			}
+			switch (rowRemoved) {
+			case 1:
+				_score += 1;
+				break;
+			case 2:
+				_score += 3;
+				break;
+			case 3:
+				_score += 5;
+				break;
+			case 4:
+				_score += 7;
+				break;
+			default:
+				break;
+			}
+
+			if (_score >= _scoreToLevelUp) {
+				_level++;
+				_scoreToLevelUp = _level * SCORE_MULTIPLIER;
+			}
+
 		}
 
 		return !droppedOneLine;
@@ -336,6 +364,15 @@ public class TetrisView extends SurfaceView implements Callback {
 			// move to the start of next line
 			currentPoint.offset(-MATRIX_WIDTH * blockEdge, -blockEdge);
 		}
+
+		// then draw the score bar, use _seperatorPaint to draw it
+		currentPoint.set(MATRIX_WIDTH * blockEdge + blockEdge / 8, 0);
+		_separatorPaint.setColor(SCORE_BAR_COLOR);
+		_separatorPaint.setStrokeWidth(blockEdge / 4);
+		float scoreBarLength = (_score - (_level - 1) * SCORE_MULTIPLIER)
+				* _screenHeight / _scoreToLevelUp;
+		canvas.drawLine(currentPoint.x, _screenHeight, currentPoint.x,
+				_screenHeight - scoreBarLength, _separatorPaint);
 
 		// then draw the left-right separator
 		currentPoint.set(MATRIX_WIDTH * blockEdge + blockEdge / 2, 0);
@@ -514,8 +551,9 @@ public class TetrisView extends SurfaceView implements Callback {
 	}
 
 	private void initializeParams() {
-		_level = 10;
+		_level = 1;
 		_score = 0;
+		_scoreToLevelUp = _level * SCORE_MULTIPLIER;
 		_justStart = true;
 	}
 

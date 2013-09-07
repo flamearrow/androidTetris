@@ -67,6 +67,10 @@ public class TetrisView extends SurfaceView implements Callback {
 
 	private Point _upperLeft;
 
+	private boolean _isFastDropping;
+
+	private SurfaceHolder _holder;
+
 	private int getRandomColor() {
 		switch (rand.nextInt(7)) {
 		case 0:
@@ -158,6 +162,10 @@ public class TetrisView extends SurfaceView implements Callback {
 		surfaceDestroyed(null);
 	}
 
+	public void setFastDropping(boolean fastDropping) {
+		_isFastDropping = fastDropping;
+	}
+
 	public void releaseResources() {
 
 	}
@@ -172,6 +180,7 @@ public class TetrisView extends SurfaceView implements Callback {
 
 		boolean addAnotherBlock = updateGameMatrix();
 		if (addAnotherBlock) {
+			_isFastDropping = false;
 			boolean gameOver = addBlockToMatrix(_gameMatrix, MATRIX_HEIGHT - 1,
 					4, _nextBlock, true);
 			if (gameOver) {
@@ -439,39 +448,42 @@ public class TetrisView extends SurfaceView implements Callback {
 	 * @return succeed
 	 */
 	private boolean moveCurrentBlock(Point delta) {
-		boolean succeed = true;
-		Point tmpPoint = new Point();
-		for (Point p : _currentBlockPoints) {
-			tmpPoint.set(p.x + delta.x, p.y + delta.y);
-			if (_currentBlockPoints.contains(tmpPoint)) {
-				continue;
-			}
-			// if we hit boundary or the new block is already set then we can't
-			// continue dropping
-			if ((tmpPoint.x < 0 || tmpPoint.y < 0 || tmpPoint.y >= MATRIX_WIDTH)
-					|| (_gameMatrix[tmpPoint.x][tmpPoint.y] != INITIAL_BLOCK_COLOR)) {
-				succeed = false;
-				break;
-			}
-		}
-
-		if (succeed) {
-			_backList.clear();
+		synchronized (_holder) {
+			boolean succeed = true;
+			Point tmpPoint = new Point();
 			for (Point p : _currentBlockPoints) {
-				_gameMatrix[p.x][p.y] = INITIAL_BLOCK_COLOR;
-				p.offset(delta.x, delta.y);
+				tmpPoint.set(p.x + delta.x, p.y + delta.y);
+				if (_currentBlockPoints.contains(tmpPoint)) {
+					continue;
+				}
+				// if we hit boundary or the new block is already set then we
+				// can't
+				// continue dropping
+				if ((tmpPoint.x < 0 || tmpPoint.y < 0 || tmpPoint.y >= MATRIX_WIDTH)
+						|| (_gameMatrix[tmpPoint.x][tmpPoint.y] != INITIAL_BLOCK_COLOR)) {
+					succeed = false;
+					break;
+				}
 			}
-			for (Point p : _currentBlockPoints) {
-				_gameMatrix[p.x][p.y] = _currentBlock.color;
-				_backList.add(p);
-			}
-			// important: we need to update Points index in the hashset
-			_currentBlockPoints.clear();
-			_currentBlockPoints.addAll(_backList);
 
-			_upperLeft.offset(delta.x, delta.y);
+			if (succeed) {
+				_backList.clear();
+				for (Point p : _currentBlockPoints) {
+					_gameMatrix[p.x][p.y] = INITIAL_BLOCK_COLOR;
+					p.offset(delta.x, delta.y);
+				}
+				for (Point p : _currentBlockPoints) {
+					_gameMatrix[p.x][p.y] = _currentBlock.color;
+					_backList.add(p);
+				}
+				// important: we need to update Points index in the hashset
+				_currentBlockPoints.clear();
+				_currentBlockPoints.addAll(_backList);
+
+				_upperLeft.offset(delta.x, delta.y);
+			}
+			return succeed;
 		}
-		return succeed;
 	}
 
 	// move the current active block to left/right if according whether this tap
@@ -539,6 +551,8 @@ public class TetrisView extends SurfaceView implements Callback {
 
 	@Override
 	public void surfaceCreated(SurfaceHolder holder) {
+		// buffer this for synchronization
+		_holder = holder;
 		newGame(holder);
 	}
 
@@ -555,6 +569,7 @@ public class TetrisView extends SurfaceView implements Callback {
 		_score = 0;
 		_scoreToLevelUp = _level * SCORE_MULTIPLIER;
 		_justStart = true;
+		_isFastDropping = false;
 	}
 
 	// this is called when a new game is started, add a random block in
@@ -614,11 +629,11 @@ public class TetrisView extends SurfaceView implements Callback {
 
 	private class TetrisThread extends Thread {
 		// _holder is used to retrieve Canvas object of the current SurfaceView
-		private SurfaceHolder _holder;
+		private SurfaceHolder _myHolder;
 		private boolean _running;
 
 		public TetrisThread(SurfaceHolder holder) {
-			_holder = holder;
+			_myHolder = holder;
 		}
 
 		public void setRunning(boolean running) {
@@ -635,13 +650,15 @@ public class TetrisView extends SurfaceView implements Callback {
 
 				// we want to update the canvas every 100 milis
 				// just a simple speed controller
-				// to implement 'falling immediately' we need a fancier one
-				if (elapsed < 1000 - _level * 50) {
+				// to implement 'fast dropping' we need a fancier one
+				if (elapsed < 100)
+					continue;
+				if ((elapsed < 1000 - _level * 50) && !_isFastDropping) {
 					continue;
 				}
 				try {
-					canvas = _holder.lockCanvas(null);
-					synchronized (_holder) {
+					canvas = _myHolder.lockCanvas(null);
+					synchronized (_myHolder) {
 						previousFrameTime = currentFrameTime;
 
 						updateComponents();
@@ -649,7 +666,7 @@ public class TetrisView extends SurfaceView implements Callback {
 					}
 				} finally {
 					if (canvas != null) {
-						_holder.unlockCanvasAndPost(canvas);
+						_myHolder.unlockCanvasAndPost(canvas);
 					}
 				}
 			}

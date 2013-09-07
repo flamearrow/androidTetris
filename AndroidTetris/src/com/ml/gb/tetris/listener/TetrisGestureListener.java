@@ -78,6 +78,7 @@ public class TetrisGestureListener extends SimpleOnGestureListener {
 	}
 
 	public void onSwipeDown() {
-		_tetrisView.drop();
+		// _tetrisView.drop();
+		_tetrisView.setFastDropping(true);
 	}
 }

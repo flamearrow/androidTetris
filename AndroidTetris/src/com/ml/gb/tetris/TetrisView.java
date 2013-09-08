@@ -523,6 +523,8 @@ public class TetrisView extends SurfaceView implements Callback {
 					tmpP.set(i, j);
 					// if it's outside of screen or it's already occupied then
 					// we can't rotate
+
+					// TODO bug here!
 					if (j < 0
 							|| (!_currentBlockPoints.contains(tmpP) && _gameMatrix[i][j] != INITIAL_BLOCK_COLOR)) {
 						_currentBlock.rRotate();

@@ -69,6 +69,10 @@ public class TetrisView extends SurfaceView implements Callback {
 
 	private boolean _isFastDropping;
 
+	// when we want to move the current block by swipping/scrolling, the canvas
+	// needs to be re drawn immediately
+	private boolean _shouldReDrawComponents;
+
 	private SurfaceHolder _holder;
 
 	private int getRandomColor() {
@@ -162,8 +166,8 @@ public class TetrisView extends SurfaceView implements Callback {
 		surfaceDestroyed(null);
 	}
 
-	public void setFastDropping(boolean fastDropping) {
-		_isFastDropping = fastDropping;
+	public void setFastDropping() {
+		_isFastDropping = true;
 	}
 
 	public void releaseResources() {
@@ -488,12 +492,16 @@ public class TetrisView extends SurfaceView implements Callback {
 
 	// move the current active block to left/right if according whether this tap
 	// happens at left/right half of the screen
+	// ideally we should first check if it's eligible to move then set
+	// _shouldReDrawComponents = true
 	public void moveLeft() {
 		moveCurrentBlock(new Point(0, -1));
+		_shouldReDrawComponents = true;
 	}
 
 	public void moveRight() {
 		moveCurrentBlock(new Point(0, 1));
+		_shouldReDrawComponents = true;
 	}
 
 	/**
@@ -524,7 +532,7 @@ public class TetrisView extends SurfaceView implements Callback {
 			}
 		}
 
-		// safe to update now
+		// safe to update now, needs to be reDrawn immediately
 		for (Point p : _currentBlockPoints) {
 			_gameMatrix[p.x][p.y] = INITIAL_BLOCK_COLOR;
 		}
@@ -539,14 +547,9 @@ public class TetrisView extends SurfaceView implements Callback {
 				}
 			}
 		}
+		_shouldReDrawComponents = true;
 
 		return true;
-	}
-
-	// drop the current block
-	// drop one line first...
-	public void drop() {
-		moveCurrentBlock(new Point(-3, 0));
 	}
 
 	@Override
@@ -570,6 +573,7 @@ public class TetrisView extends SurfaceView implements Callback {
 		_scoreToLevelUp = _level * SCORE_MULTIPLIER;
 		_justStart = true;
 		_isFastDropping = false;
+		_shouldReDrawComponents = false;
 	}
 
 	// this is called when a new game is started, add a random block in
@@ -648,11 +652,29 @@ public class TetrisView extends SurfaceView implements Callback {
 				long currentFrameTime = System.currentTimeMillis();
 				long elapsed = currentFrameTime - previousFrameTime;
 
-				// we want to update the canvas every 100 milis
-				// just a simple speed controller
-				// to implement 'fast dropping' we need a fancier one
+				// finest granularity to update is100 milis
 				if (elapsed < 100)
 					continue;
+
+				// if we are moving the block, then we need to reDraw
+				// immediately (within the next 100 mili time window)
+				if (_shouldReDrawComponents) {
+					try {
+						canvas = _myHolder.lockCanvas(null);
+						synchronized (_myHolder) {
+							// Components are already updated, just draw them!
+							drawComponents(canvas);
+						}
+					} finally {
+						if (canvas != null) {
+							_myHolder.unlockCanvasAndPost(canvas);
+						}
+						_shouldReDrawComponents = false;
+					}
+				}
+
+				// normal dropping, should wait for enough time span to draw
+				// if it's fast dropping we want to update every 100 milis
 				if ((elapsed < 1000 - _level * 50) && !_isFastDropping) {
 					continue;
 				}

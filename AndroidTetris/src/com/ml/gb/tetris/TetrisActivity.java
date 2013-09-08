@@ -1,6 +1,5 @@
 package com.ml.gb.tetris;
 
-
 import android.app.Activity;
 import android.os.Bundle;
 import android.view.GestureDetector;
@@ -19,7 +18,7 @@ public class TetrisActivity extends Activity {
 		setContentView(R.layout.activity_tetris);
 		_tetrisView = (TetrisView) findViewById(R.id.tetrisActivity);
 		// can also let TetrisActivity implements OnGestureListener, but that
-		// will leave some blank methods 
+		// will leave some blank methods
 		_gesDect = new GestureDetector(this, new TetrisGestureListener(this));
 	}
 
@@ -53,4 +52,5 @@ public class TetrisActivity extends Activity {
 		// explicitly call onTouchEvent - it's a bit weird
 		return _gesDect.onTouchEvent(event);
 	}
+
 }

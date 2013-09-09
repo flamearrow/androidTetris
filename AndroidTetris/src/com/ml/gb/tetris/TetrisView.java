@@ -35,6 +35,7 @@ public class TetrisView extends SurfaceView implements Callback {
 	private static final int SCORE_BAR_COLOR = Color.RED;
 	private static final double GOLDEN_RATIO = 0.618;
 	private static final int INITIAL_BLOCK_COLOR = Color.GRAY;
+	private static final float SCORE_BAR_DELTA = 2.0f;
 
 	private TetrisThread _thread;
 
@@ -51,6 +52,7 @@ public class TetrisView extends SurfaceView implements Callback {
 	private Paint _previewMatrixPaint;
 	private Paint _separatorPaint;
 	private Paint _staticPaint;
+	private Paint _scoreBarPaint;
 
 	private int _level;
 	private int _score;
@@ -67,13 +69,23 @@ public class TetrisView extends SurfaceView implements Callback {
 
 	private Point _upperLeft;
 
+	// fastDropping is triggered by swiping down
 	private boolean _isFastDropping;
+
+	// repaint score bar when the score is changed
+	private boolean _shouldRepaintScoreBar;
+	private float _scoreBarCurrentLength;
 
 	// when we want to move the current block by swipping/scrolling, the canvas
 	// needs to be re drawn immediately
 	private boolean _shouldReDrawComponents;
 
 	private SurfaceHolder _holder;
+
+	// a squre's edge length, should accommodate with width
+	// the total width is shared by gameSection width, previewSection with
+	// and a separator
+	private int _blockEdgeLength;
 
 	private int getRandomColor() {
 		switch (rand.nextInt(7)) {
@@ -142,7 +154,7 @@ public class TetrisView extends SurfaceView implements Callback {
 		}
 	}
 
-	// Note: customized View needs to implement this two param constructor
+	// Note: customized View needs to implement this two param constructor pi
 	public TetrisView(Context context, AttributeSet attrs) {
 		super(context, attrs);
 		// this call is ensuring surfaceCreated() method will be called
@@ -155,6 +167,8 @@ public class TetrisView extends SurfaceView implements Callback {
 		_previewMatrixPaint = new Paint();
 		_separatorPaint = new Paint();
 		_staticPaint = new Paint();
+		_scoreBarPaint = new Paint();
+		_scoreBarPaint.setColor(SCORE_BAR_COLOR);
 		_currentBlockPoints = new HashSet<Point>();
 		_backList = new LinkedList<Point>();
 		_upperLeft = new Point(-1, -1);
@@ -347,11 +361,6 @@ public class TetrisView extends SurfaceView implements Callback {
 		canvas.drawRect(0, 0, canvas.getWidth(), canvas.getHeight(),
 				_backgroundPaint);
 
-		// a squre's edge length, should accommodate with width
-		// the total width is shared by gameSection width, previewSection with
-		// and a separator
-		int blockEdge = _screenWidth / (MATRIX_WIDTH + PREVIEW_EDGE + 1);
-
 		// first draw the game section
 
 		// starting from bottom left, draw a MATRIX_HEIGHT x MATRIX_WIDTH matrix
@@ -363,34 +372,30 @@ public class TetrisView extends SurfaceView implements Callback {
 			for (int j = 0; j < MATRIX_WIDTH; j++) {
 				// draw edge
 				_gameMatrixPaint.setColor(SQUARE_EDGE_COLOR);
-				canvas.drawRect(currentPoint.x, currentPoint.y - blockEdge,
-						currentPoint.x + blockEdge, currentPoint.y,
-						_gameMatrixPaint);
+				canvas.drawRect(currentPoint.x, currentPoint.y
+						- _blockEdgeLength, currentPoint.x + _blockEdgeLength,
+						currentPoint.y, _gameMatrixPaint);
 				// draw square
 				_gameMatrixPaint.setColor(_gameMatrix[i][j]);
 				canvas.drawRect(currentPoint.x + SQUARE_EDGE_WIDTH,
-						currentPoint.y - blockEdge + SQUARE_EDGE_WIDTH,
-						currentPoint.x + blockEdge - SQUARE_EDGE_WIDTH,
+						currentPoint.y - _blockEdgeLength + SQUARE_EDGE_WIDTH,
+						currentPoint.x + _blockEdgeLength - SQUARE_EDGE_WIDTH,
 						currentPoint.y - SQUARE_EDGE_WIDTH, _gameMatrixPaint);
-				currentPoint.offset(blockEdge, 0);
+				currentPoint.offset(_blockEdgeLength, 0);
 			}
 			// move to the start of next line
-			currentPoint.offset(-MATRIX_WIDTH * blockEdge, -blockEdge);
+			currentPoint.offset(-MATRIX_WIDTH * _blockEdgeLength,
+					-_blockEdgeLength);
 		}
 
 		// then draw the score bar, use _seperatorPaint to draw it
-		currentPoint.set(MATRIX_WIDTH * blockEdge + blockEdge / 8, 0);
-		_separatorPaint.setColor(SCORE_BAR_COLOR);
-		_separatorPaint.setStrokeWidth(blockEdge / 4);
-		float scoreBarLength = (_score - (_level - 1) * SCORE_MULTIPLIER)
-				* _screenHeight / _scoreToLevelUp;
-		canvas.drawLine(currentPoint.x, _screenHeight, currentPoint.x,
-				_screenHeight - scoreBarLength, _separatorPaint);
+		drawScroreBar(canvas);
 
 		// then draw the left-right separator
-		currentPoint.set(MATRIX_WIDTH * blockEdge + blockEdge / 2, 0);
+		currentPoint.set(
+				MATRIX_WIDTH * _blockEdgeLength + _blockEdgeLength / 2, 0);
 		_separatorPaint.setColor(SEPARATOR_COLOR);
-		_separatorPaint.setStrokeWidth(blockEdge / 2);
+		_separatorPaint.setStrokeWidth(_blockEdgeLength / 2);
 		canvas.drawLine(currentPoint.x, 0, currentPoint.x, _screenHeight,
 				_separatorPaint);
 
@@ -401,37 +406,89 @@ public class TetrisView extends SurfaceView implements Callback {
 				currentPoint.y, _separatorPaint);
 
 		// then draw the preview section, should be in center of top part
-		currentPoint.set(currentPoint.x + blockEdge / 2, currentPoint.y / 2);
-		currentPoint.offset(0, -PREVIEW_EDGE / 2 * blockEdge);
+		currentPoint.set(currentPoint.x + _blockEdgeLength / 2,
+				currentPoint.y / 2);
+		currentPoint.offset(0, -PREVIEW_EDGE / 2 * _blockEdgeLength);
 		for (int i = PREVIEW_EDGE - 1; i >= 0; i--) {
 			for (int j = 0; j < PREVIEW_EDGE; j++) {
 				// draw edge
 				_previewMatrixPaint.setColor(SQUARE_EDGE_COLOR);
-				canvas.drawRect(currentPoint.x, currentPoint.y - blockEdge,
-						currentPoint.x + blockEdge, currentPoint.y,
-						_previewMatrixPaint);
+				canvas.drawRect(currentPoint.x, currentPoint.y
+						- _blockEdgeLength, currentPoint.x + _blockEdgeLength,
+						currentPoint.y, _previewMatrixPaint);
 				// draw squre
 				_previewMatrixPaint.setColor(_previewMatrix[i][j]);
 				canvas.drawRect(currentPoint.x + SQUARE_EDGE_WIDTH,
-						currentPoint.y - blockEdge + SQUARE_EDGE_WIDTH,
-						currentPoint.x + blockEdge - SQUARE_EDGE_WIDTH,
+						currentPoint.y - _blockEdgeLength + SQUARE_EDGE_WIDTH,
+						currentPoint.x + _blockEdgeLength - SQUARE_EDGE_WIDTH,
 						currentPoint.y - SQUARE_EDGE_WIDTH, _previewMatrixPaint);
-				currentPoint.offset(blockEdge, 0);
+				currentPoint.offset(_blockEdgeLength, 0);
 			}
 			// move to the start of next line
-			currentPoint.offset(-PREVIEW_EDGE * blockEdge, blockEdge);
+			currentPoint.offset(-PREVIEW_EDGE * _blockEdgeLength,
+					_blockEdgeLength);
 		}
 
 		// then draw Level and score
 		// this needs to be exposed to update separately
 		currentPoint.set(currentPoint.x,
 				(int) (_screenHeight * (1 - GOLDEN_RATIO / 2)));
-		currentPoint.offset(blockEdge, -2 * blockEdge);
+		currentPoint.offset(_blockEdgeLength, -2 * _blockEdgeLength);
 		canvas.drawText(getResources().getString(R.string.level) + _level,
 				currentPoint.x, currentPoint.y, _staticPaint);
-		currentPoint.offset(0, 4 * blockEdge);
+		currentPoint.offset(0, 4 * _blockEdgeLength);
 		canvas.drawText(getResources().getString(R.string.score) + _score,
 				currentPoint.x, currentPoint.y, _staticPaint);
+	}
+
+	private void drawScroreBar(Canvas canvas) {
+		// calculate the x coordinate of score bar
+		int scoreBarX = MATRIX_WIDTH * _blockEdgeLength + _blockEdgeLength / 8;
+		_separatorPaint.setColor(SCORE_BAR_COLOR);
+		_separatorPaint.setStrokeWidth(_blockEdgeLength / 4);
+		float scoreBarLength = (_score - (_level - 1) * SCORE_MULTIPLIER)
+				* _screenHeight / _scoreToLevelUp;
+		canvas.drawLine(scoreBarX, _screenHeight, scoreBarX, _screenHeight
+				- scoreBarLength, _separatorPaint);
+	}
+
+	/**
+	 * each time draw a SCORE_BAR_DELTA till we draw the length we need
+	 * 
+	 * @param canvas
+	 * @return done or not
+	 */
+	private boolean drawScoreBarGradually(Canvas canvas) {
+		// calculate the x coordinate of score bar
+		int scoreBarX = MATRIX_WIDTH * _blockEdgeLength + _blockEdgeLength / 8;
+		float scoreBarLength = (_score - (_level - 1) * SCORE_MULTIPLIER)
+				* _screenHeight / _scoreToLevelUp;
+
+		// we just draw all the way up to _screenHeight
+		if (_scoreBarCurrentLength == _screenHeight) {
+			_scoreBarCurrentLength = 0;
+			return true;
+		}
+		// we have finished drawing
+		else if (_scoreBarCurrentLength == scoreBarLength) {
+			return false;
+		}
+		// should level up, first draw all the way to screen top then start from
+		// zero
+		else if (_scoreBarCurrentLength > scoreBarLength) {
+			if (_scoreBarCurrentLength + SCORE_BAR_DELTA < _screenHeight) {
+				_scoreBarCurrentLength += SCORE_BAR_DELTA;
+			} else {
+				_scoreBarCurrentLength = _screenHeight;
+			}
+		} else if (_scoreBarCurrentLength + SCORE_BAR_DELTA < scoreBarLength) {
+			_scoreBarCurrentLength += SCORE_BAR_DELTA;
+		} else {
+			_scoreBarCurrentLength = scoreBarLength;
+		}
+		canvas.drawLine(scoreBarX, _screenHeight, scoreBarX, _screenHeight
+				- _scoreBarCurrentLength, _scoreBarPaint);
+		return true;
 	}
 
 	// called when first added to the View, used to record screen width and
@@ -441,6 +498,8 @@ public class TetrisView extends SurfaceView implements Callback {
 		super.onSizeChanged(w, h, oldw, oldh);
 		_screenHeight = h;
 		_screenWidth = w;
+		_blockEdgeLength = _screenWidth / (MATRIX_WIDTH + PREVIEW_EDGE + 1);
+		_scoreBarPaint.setStrokeWidth(_blockEdgeLength / 4);
 
 	}
 
@@ -576,6 +635,8 @@ public class TetrisView extends SurfaceView implements Callback {
 		_justStart = true;
 		_isFastDropping = false;
 		_shouldReDrawComponents = false;
+		_shouldRepaintScoreBar = false;
+		_scoreBarCurrentLength = 0;
 	}
 
 	// this is called when a new game is started, add a random block in
@@ -672,6 +733,23 @@ public class TetrisView extends SurfaceView implements Callback {
 							_myHolder.unlockCanvasAndPost(canvas);
 						}
 						_shouldReDrawComponents = false;
+					}
+				}
+
+				if (_shouldRepaintScoreBar) {
+					try {
+						canvas = _myHolder.lockCanvas(null);
+						synchronized (_myHolder) {
+							boolean shouldContinueDrawScoreBar = drawScoreBarGradually(canvas);
+							if (!shouldContinueDrawScoreBar) {
+								_shouldRepaintScoreBar = false;
+								_scoreBarCurrentLength = 0;
+							}
+						}
+					} finally {
+						if (canvas != null) {
+							_myHolder.unlockCanvasAndPost(canvas);
+						}
 					}
 				}
 

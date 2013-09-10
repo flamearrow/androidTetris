@@ -50,6 +50,7 @@ public class TetrisActivity extends Activity {
 		// Toast.makeText(this, "mlgb don't touch me!!", Toast.LENGTH_SHORT)
 		// .show();
 		// explicitly call onTouchEvent - it's a bit weird
+		_tetrisView.shake();
 		return _gesDect.onTouchEvent(event);
 	}
 

@@ -32,14 +32,17 @@ public class TetrisView extends SurfaceView implements Callback {
 	private static final int MATRIX_WIDTH = 12;
 	private static final int PREVIEW_EDGE = 4;
 	private static final int SQUARE_EDGE_WIDTH = 2;
-	private static final int SQUARE_EDGE_COLOR = Color.YELLOW;
-	private static final int SEPARATOR_COLOR = Color.DKGRAY;
-	private static final int SCORE_BAR_COLOR = Color.RED;
 	private static final double GOLDEN_RATIO = 0.618;
-	private static final int INITIAL_BLOCK_COLOR = Color.GRAY;
 	private static final float SCORE_BAR_DELTA = 2.0f;
 	// we try to refresh the screen every MIN_GRANULARITY milis
 	private static final int MIN_GRANULARITY = 50;
+
+	private static final int BACKGROUND_COLOR = Color.WHITE;
+	private static final int FONT_COLOR = Color.BLACK;
+	private static final int SQUARE_EDGE_COLOR = Color.YELLOW;
+	private static final int SEPARATOR_COLOR = Color.DKGRAY;
+	private static final int SCORE_BAR_COLOR = Color.RED;
+	private static final int INITIAL_BLOCK_COLOR = Color.GRAY;
 
 	private TetrisThread _thread;
 
@@ -55,7 +58,7 @@ public class TetrisView extends SurfaceView implements Callback {
 	private Paint _gameMatrixPaint;
 	private Paint _previewMatrixPaint;
 	private Paint _separatorPaint;
-	private Paint _staticPaint;
+	private Paint _statisticPaint;
 	private Paint _scoreBarPaint;
 
 	private int _level;
@@ -172,7 +175,7 @@ public class TetrisView extends SurfaceView implements Callback {
 		_gameMatrixPaint = new Paint();
 		_previewMatrixPaint = new Paint();
 		_separatorPaint = new Paint();
-		_staticPaint = new Paint();
+		_statisticPaint = new Paint();
 		_scoreBarPaint = new Paint();
 		_scoreBarPaint.setColor(SCORE_BAR_COLOR);
 		_currentBlockPoints = new HashSet<Point>();
@@ -387,7 +390,7 @@ public class TetrisView extends SurfaceView implements Callback {
 
 	// background and Separator are not always updated
 	private void drawBackgroundAndSeperator(Canvas canvas) {
-		_backgroundPaint.setColor(Color.WHITE);
+		_backgroundPaint.setColor(BACKGROUND_COLOR);
 		canvas.drawRect(0, 0, canvas.getWidth(), canvas.getHeight(),
 				_backgroundPaint);
 
@@ -434,15 +437,21 @@ public class TetrisView extends SurfaceView implements Callback {
 		}
 	}
 
+	// need to first clear the level and score area then draw text
 	private void drawScoreAndLevel(Canvas canvas) {
 		Point currentPoint = new Point((MATRIX_WIDTH + 1) * _blockEdgeLength,
 				(int) (_screenHeight * (1 - GOLDEN_RATIO / 2)));
+		_statisticPaint.setColor(BACKGROUND_COLOR);
+		canvas.drawRect(currentPoint.x, currentPoint.y, currentPoint.x + 4
+				* _blockEdgeLength, currentPoint.y + 5 * _blockEdgeLength,
+				_statisticPaint);
+		_statisticPaint.setColor(FONT_COLOR);
 		currentPoint.offset(_blockEdgeLength, -2 * _blockEdgeLength);
 		canvas.drawText(getResources().getString(R.string.level) + _level,
-				currentPoint.x, currentPoint.y, _staticPaint);
+				currentPoint.x, currentPoint.y, _statisticPaint);
 		currentPoint.offset(0, 4 * _blockEdgeLength);
 		canvas.drawText(getResources().getString(R.string.score) + _score,
-				currentPoint.x, currentPoint.y, _staticPaint);
+				currentPoint.x, currentPoint.y, _statisticPaint);
 	}
 
 	private void drawPreviewBlocks(Canvas canvas) {
@@ -492,17 +501,28 @@ public class TetrisView extends SurfaceView implements Callback {
 		float scoreBarLength = (_score - (_level - 1) * SCORE_MULTIPLIER)
 				* _screenHeight / _scoreToLevelUp;
 
-		// we just draw all the way up to _screenHeight
+		// we just draw all the way up to _screenHeight, need to clear the score
+		// bar
 		if (_scoreBarCurrentLength == _screenHeight) {
 			_scoreBarCurrentLength = 0;
-			canvas.drawLine(scoreBarX, _screenHeight, scoreBarX, _screenHeight
-					- _scoreBarCurrentLength, _scoreBarPaint);
+			_scoreBarPaint.setColor(BACKGROUND_COLOR);
+			canvas.drawLine(scoreBarX, _screenHeight, scoreBarX, 0,
+					_scoreBarPaint);
+			_scoreBarPaint.setColor(SCORE_BAR_COLOR);
+			// drawBackgroundAndSeperator(canvas);
+			// drawGameBlocks(canvas);
+			// drawPreviewBlocks(canvas);
+			// drawScoreAndLevel(canvas);
 			return false;
 		}
 		// we have finished drawing
 		else if (_scoreBarCurrentLength == scoreBarLength) {
 			canvas.drawLine(scoreBarX, _screenHeight, scoreBarX, _screenHeight
 					- _scoreBarCurrentLength, _scoreBarPaint);
+			_scoreBarPaint.setColor(BACKGROUND_COLOR);
+			canvas.drawLine(scoreBarX, _screenHeight - _scoreBarCurrentLength,
+					scoreBarX, 0, _scoreBarPaint);
+			_scoreBarPaint.setColor(SCORE_BAR_COLOR);
 			return true;
 		}
 		// should level up, first draw all the way to screen top then start from
@@ -520,6 +540,10 @@ public class TetrisView extends SurfaceView implements Callback {
 		}
 		canvas.drawLine(scoreBarX, _screenHeight, scoreBarX, _screenHeight
 				- _scoreBarCurrentLength, _scoreBarPaint);
+		_scoreBarPaint.setColor(BACKGROUND_COLOR);
+		canvas.drawLine(scoreBarX, _screenHeight - _scoreBarCurrentLength,
+				scoreBarX, 0, _scoreBarPaint);
+		_scoreBarPaint.setColor(SCORE_BAR_COLOR);
 		return false;
 	}
 
@@ -779,6 +803,7 @@ public class TetrisView extends SurfaceView implements Callback {
 							_shouldRepaintScoreBar = !drawScoreBarGradually(canvas);
 							drawGameBlocks(canvas);
 							drawPreviewBlocks(canvas);
+							drawScoreAndLevel(canvas);
 						}
 					} finally {
 						if (canvas != null) {

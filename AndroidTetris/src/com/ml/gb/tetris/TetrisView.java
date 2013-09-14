@@ -375,7 +375,7 @@ public class TetrisView extends SurfaceView implements Callback {
 	private void drawComponents(Canvas canvas) {
 		drawBackgroundAndSeperator(canvas);
 
-		// first draw the game section
+		// first draw the game section 
 		drawGameBlocks(canvas);
 
 		// then draw the left-right separator

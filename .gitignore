@@ -1,1 +1,13 @@
+*.apk
+*.ap_
 
+*.class
+
+bin/
+
+gen/
+
+# eclipse specific
+.classpath
+.project
+local.properties

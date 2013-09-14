@@ -12,7 +12,7 @@ public class TetrisGestureListener extends SimpleOnGestureListener {
 	// sensitivity to detect swiping down gesture
 	public static final int SWIPE_THRESHOLD = 100;
 	// sensitivity to detect scrolling left/right gesture
-	public static final int SCROLL_THRESHOLD = 15;
+	public static final int SCROLL_THRESHOLD = 20;
 
 	public TetrisGestureListener(TetrisActivity act) {
 		_tetrisView = act.getView();
@@ -20,7 +20,7 @@ public class TetrisGestureListener extends SimpleOnGestureListener {
 
 	@Override
 	public boolean onDoubleTap(MotionEvent e) {
-		_tetrisView.rotate();
+		_tetrisView.setFastDropping();
 		return false;
 	}
 

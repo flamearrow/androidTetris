@@ -384,7 +384,7 @@ public class TetrisView extends SurfaceView implements Callback {
 		// then draw Level and score
 		drawScoreAndLevel(canvas);
 
-		// then draw scorebarLength
+		// then draw scorebarLength 
 		_shouldRepaintScoreBar = !drawScoreBarGradually(canvas);
 	}
 

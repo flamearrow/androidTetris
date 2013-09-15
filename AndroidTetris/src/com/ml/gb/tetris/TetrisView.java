@@ -11,12 +11,13 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Point;
+import android.graphics.Rect;
 import android.util.AttributeSet;
 import android.view.SurfaceHolder;
 import android.view.SurfaceHolder.Callback;
+import android.view.SurfaceView;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
-import android.view.SurfaceView;
 
 import com.ml.gb.R;
 
@@ -85,7 +86,7 @@ public class TetrisView extends SurfaceView implements Callback {
 
 	// when we want to move the current block by swipping/scrolling, the canvas
 	// needs to be re drawn immediately
-	private boolean _shouldReDrawComponents;
+	private boolean _currentBlockMoved;
 
 	private SurfaceHolder _holder;
 
@@ -95,6 +96,9 @@ public class TetrisView extends SurfaceView implements Callback {
 	// the total width is shared by gameSection width, previewSection with
 	// and a separator
 	private int _blockEdgeLength;
+
+	private Rect _scoreBarRect;
+	private Rect _gameMatrixRect;
 
 	private int getRandomColor() {
 		switch (rand.nextInt(7)) {
@@ -184,6 +188,9 @@ public class TetrisView extends SurfaceView implements Callback {
 		shakeAnimation = AnimationUtils.loadAnimation(context,
 				R.anim.level_up_shake);
 		shakeAnimation.setRepeatCount(3);
+
+		_scoreBarRect = new Rect();
+		_gameMatrixRect = new Rect();
 	}
 
 	// pause the game, we want to save game state after returning to game
@@ -375,7 +382,7 @@ public class TetrisView extends SurfaceView implements Callback {
 	private void drawComponents(Canvas canvas) {
 		drawBackgroundAndSeperator(canvas);
 
-		// first draw the game section 
+		// first draw the game section
 		drawGameBlocks(canvas);
 
 		// then draw the left-right separator
@@ -384,7 +391,7 @@ public class TetrisView extends SurfaceView implements Callback {
 		// then draw Level and score
 		drawScoreAndLevel(canvas);
 
-		// then draw scorebarLength 
+		// then draw scorebarLength
 		_shouldRepaintScoreBar = !drawScoreBarGradually(canvas);
 	}
 
@@ -509,10 +516,6 @@ public class TetrisView extends SurfaceView implements Callback {
 			canvas.drawLine(scoreBarX, _screenHeight, scoreBarX, 0,
 					_scoreBarPaint);
 			_scoreBarPaint.setColor(SCORE_BAR_COLOR);
-			// drawBackgroundAndSeperator(canvas);
-			// drawGameBlocks(canvas);
-			// drawPreviewBlocks(canvas);
-			// drawScoreAndLevel(canvas);
 			return false;
 		}
 		// we have finished drawing
@@ -556,7 +559,12 @@ public class TetrisView extends SurfaceView implements Callback {
 		_screenWidth = w;
 		_blockEdgeLength = _screenWidth / (MATRIX_WIDTH + PREVIEW_EDGE + 1);
 		_scoreBarPaint.setStrokeWidth(_blockEdgeLength / 4);
-
+		float scoreBarRight = _blockEdgeLength / 4 + MATRIX_WIDTH
+				* _blockEdgeLength;
+		_scoreBarRect.set(MATRIX_WIDTH * _blockEdgeLength, 0,
+				(int) scoreBarRight, _screenHeight);
+		_gameMatrixRect.set(0, 0, MATRIX_WIDTH * _blockEdgeLength,
+				_screenHeight);
 	}
 
 	/**
@@ -611,12 +619,12 @@ public class TetrisView extends SurfaceView implements Callback {
 	// _shouldReDrawComponents = true
 	public void moveLeft() {
 		moveCurrentBlock(new Point(0, -1));
-		_shouldReDrawComponents = true;
+		_currentBlockMoved = true;
 	}
 
 	public void moveRight() {
 		moveCurrentBlock(new Point(0, 1));
-		_shouldReDrawComponents = true;
+		_currentBlockMoved = true;
 	}
 
 	/**
@@ -665,7 +673,7 @@ public class TetrisView extends SurfaceView implements Callback {
 				}
 			}
 		}
-		_shouldReDrawComponents = true;
+		_currentBlockMoved = true;
 
 		return true;
 	}
@@ -691,7 +699,7 @@ public class TetrisView extends SurfaceView implements Callback {
 		_scoreToLevelUp = _level * SCORE_MULTIPLIER;
 		_justStart = true;
 		_isFastDropping = false;
-		_shouldReDrawComponents = false;
+		_currentBlockMoved = false;
 		_shouldRepaintScoreBar = false;
 		_scoreBarCurrentLength = 0;
 	}
@@ -779,31 +787,27 @@ public class TetrisView extends SurfaceView implements Callback {
 
 				// if we are moving the block, then we need to reDraw
 				// immediately (within the next 100 mili time window)
-				if (_shouldReDrawComponents) {
+				if (_currentBlockMoved) {
 					try {
-						canvas = _myHolder.lockCanvas(null);
+						canvas = _myHolder.lockCanvas(_gameMatrixRect);
 						synchronized (_myHolder) {
-							// Components are already updated, just draw them!
-							drawComponents(canvas);
+							drawGameBlocks(canvas);
 						}
 					} finally {
 						if (canvas != null) {
 							_myHolder.unlockCanvasAndPost(canvas);
 						}
-						_shouldReDrawComponents = false;
+						_currentBlockMoved = false;
 					}
 				}
 
 				if (_shouldRepaintScoreBar) {
 					try {
-						canvas = _myHolder.lockCanvas(null);
+						canvas = _myHolder.lockCanvas(_scoreBarRect);
 						synchronized (_myHolder) {
 							// if we are not done then we should continue
 							// drawing
 							_shouldRepaintScoreBar = !drawScoreBarGradually(canvas);
-							drawGameBlocks(canvas);
-							drawPreviewBlocks(canvas);
-							drawScoreAndLevel(canvas);
 						}
 					} finally {
 						if (canvas != null) {

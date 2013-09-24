@@ -44,6 +44,7 @@ public class TetrisView extends SurfaceView implements Callback {
 	private static final int SEPARATOR_COLOR = Color.DKGRAY;
 	private static final int SCORE_BAR_COLOR = Color.RED;
 	private static final int INITIAL_BLOCK_COLOR = Color.GRAY;
+	private static final int PREVIEW_DROPPED_BLOCK_COLOR = Color.WHITE;
 
 	private TetrisThread _thread;
 
@@ -72,6 +73,8 @@ public class TetrisView extends SurfaceView implements Callback {
 
 	private Block _currentBlock;
 	private Block _nextBlock;
+	// _currentBlockPoints is used to represent the blocks occupied by current
+	// dropping block
 	private Set<Point> _currentBlockPoints;
 	private List<Point> _backList;
 
@@ -437,6 +440,10 @@ public class TetrisView extends SurfaceView implements Callback {
 						currentPoint.x + _blockEdgeLength - SQUARE_EDGE_WIDTH,
 						currentPoint.y - SQUARE_EDGE_WIDTH, _gameMatrixPaint);
 				currentPoint.offset(_blockEdgeLength, 0);
+				// if we just drew a preview block, need to reset its color
+				if (_gameMatrix[i][j] == PREVIEW_DROPPED_BLOCK_COLOR) {
+					_gameMatrix[i][j] = INITIAL_BLOCK_COLOR;
+				}
 			}
 			// move to the start of next line
 			currentPoint.offset(-MATRIX_WIDTH * _blockEdgeLength,
@@ -608,8 +615,45 @@ public class TetrisView extends SurfaceView implements Callback {
 				_currentBlockPoints.addAll(_backList);
 
 				_upperLeft.offset(delta.x, delta.y);
+
 			}
+			updateDroppedLocation();
+
 			return succeed;
+		}
+	}
+
+	public void updateDroppedLocation() {
+		Point tmpPoint = new Point();
+		int probDeltaX = 0;
+		here: while (true) {
+			for (Point p : _currentBlockPoints) {
+				tmpPoint.set(p.x - probDeltaX, p.y);
+				// this point is occupied by the dropping block
+				if (_currentBlockPoints.contains(tmpPoint))
+					continue;
+				// if the current block already hit bottom, we will
+				// increment an additional line
+				// if we hit bottom boundary then stop probing
+				if (p.x - probDeltaX < 0
+						|| _gameMatrix[p.x - probDeltaX][p.y] != INITIAL_BLOCK_COLOR) {
+					probDeltaX--;
+					break here;
+				}
+			}
+			// otherwise continue probing down
+			probDeltaX++;
+		}
+		// now prbDeltaY is in place, need to set the preview block
+		// points
+		for (Point p : _currentBlockPoints) {
+			tmpPoint.set(p.x - probDeltaX, p.y);
+			// if currentBlock overlaps with previewPoint, draw
+			// curentBlock
+			if (_currentBlockPoints.contains(tmpPoint))
+				continue;
+			// otherwise set this block to preview color
+			_gameMatrix[tmpPoint.x][tmpPoint.y] = PREVIEW_DROPPED_BLOCK_COLOR;
 		}
 	}
 
@@ -647,7 +691,6 @@ public class TetrisView extends SurfaceView implements Callback {
 					// if it's outside of screen or it's already occupied then
 					// we can't rotate
 
-					// TODO bug here!
 					if (j < 0
 							|| j >= MATRIX_WIDTH
 							|| (!_currentBlockPoints.contains(tmpP) && _gameMatrix[i][j] != INITIAL_BLOCK_COLOR)) {
@@ -673,6 +716,7 @@ public class TetrisView extends SurfaceView implements Callback {
 				}
 			}
 		}
+		updateDroppedLocation();
 		_currentBlockMoved = true;
 
 		return true;
@@ -718,6 +762,7 @@ public class TetrisView extends SurfaceView implements Callback {
 		addBlockToMatrix(_gameMatrix, MATRIX_HEIGHT - 1, 4, _currentBlock, true);
 
 		updateCurrentBlockPoints();
+		updateDroppedLocation();
 
 		_nextBlock = getRandomBlock();
 		addBlockToMatrix(_previewMatrix, PREVIEW_EDGE - 1, 0, _nextBlock, false);

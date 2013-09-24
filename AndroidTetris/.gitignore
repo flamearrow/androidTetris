@@ -1,6 +1,6 @@
 *.apk
 *.ap_
-
+#.log
 *.class
 
 bin/

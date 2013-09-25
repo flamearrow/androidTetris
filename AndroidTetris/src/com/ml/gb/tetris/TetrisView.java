@@ -13,6 +13,7 @@ import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceHolder.Callback;
 import android.view.SurfaceView;
@@ -40,7 +41,7 @@ public class TetrisView extends SurfaceView implements Callback {
 
 	private static final int BACKGROUND_COLOR = Color.WHITE;
 	private static final int FONT_COLOR = Color.BLACK;
-	private static final int SQUARE_EDGE_COLOR = Color.YELLOW;
+	private static final int SQUARE_EDGE_COLOR = 0xABCDEF12;
 	private static final int SEPARATOR_COLOR = Color.DKGRAY;
 	private static final int SCORE_BAR_COLOR = Color.RED;
 	private static final int INITIAL_BLOCK_COLOR = Color.GRAY;
@@ -51,6 +52,8 @@ public class TetrisView extends SurfaceView implements Callback {
 	// Android Color are all int!
 	private int[][] _gameMatrix;
 	private int[][] _previewMatrix;
+
+	SurfaceHolder _holder;
 
 	private int _screenWidth;
 	private int _screenHeight;
@@ -68,8 +71,6 @@ public class TetrisView extends SurfaceView implements Callback {
 	private int _scoreToLevelUp;
 	// score to level up for each level is _level * multiplier
 	private static final int SCORE_MULTIPLIER = 10;
-
-	private boolean _justStart;
 
 	private Block _currentBlock;
 	private Block _nextBlock;
@@ -91,8 +92,6 @@ public class TetrisView extends SurfaceView implements Callback {
 	// when we want to move the current block by swipping/scrolling, the canvas
 	// needs to be re drawn immediately
 	private boolean _currentBlockMoved;
-
-	private SurfaceHolder _holder;
 
 	private Animation shakeAnimation;
 
@@ -199,9 +198,10 @@ public class TetrisView extends SurfaceView implements Callback {
 	}
 
 	// pause the game, we want to save game state after returning to game
-	// TODO: need save state
 	public void pause() {
-		surfaceDestroyed(null);
+		if (_thread != null) {
+			_thread.setRunning(false);
+		}
 	}
 
 	public void setFastDropping() {
@@ -213,12 +213,6 @@ public class TetrisView extends SurfaceView implements Callback {
 	}
 
 	private void updateComponents() {
-		// if it's just started, we don't want to update matrixs as they are
-		// already updated
-		if (_justStart) {
-			_justStart = false;
-			return;
-		}
 
 		boolean addAnotherBlock = updateGameMatrix();
 		if (addAnotherBlock) {
@@ -241,6 +235,7 @@ public class TetrisView extends SurfaceView implements Callback {
 	 */
 	private void stopGame() {
 		// TODO implement this
+		Log.d("TetrisView", "gameOver!");
 	}
 
 	/**
@@ -576,6 +571,7 @@ public class TetrisView extends SurfaceView implements Callback {
 				(int) scoreBarRight, _screenHeight);
 		_gameMatrixRect.set(0, 0, MATRIX_WIDTH * _blockEdgeLength,
 				_screenHeight);
+		newGame();
 	}
 
 	/**
@@ -735,24 +731,29 @@ public class TetrisView extends SurfaceView implements Callback {
 
 	@Override
 	public void surfaceCreated(SurfaceHolder holder) {
-		// buffer this for synchronization
 		_holder = holder;
-		newGame(holder);
-	}
+		// once the thread is setRunning(false) the for loop will end the
+		// thread, therefore we need to create a new thread
 
-	private void newGame(SurfaceHolder holder) {
-		initializeParams();
-		initializeMatrix();
+		float scoreBarRight = _blockEdgeLength / 4 + MATRIX_WIDTH
+				* _blockEdgeLength;
+		_scoreBarRect.set(MATRIX_WIDTH * _blockEdgeLength, 0,
+				(int) scoreBarRight, _screenHeight);
+
 		_thread = new TetrisThread(holder);
 		_thread.setRunning(true);
 		_thread.start();
+	}
+
+	private void newGame() {
+		initializeParams();
+		initializeMatrix();
 	}
 
 	private void initializeParams() {
 		_level = 1;
 		_score = 0;
 		_scoreToLevelUp = _level * SCORE_MULTIPLIER;
-		_justStart = true;
 		_isFastDropping = false;
 		_currentBlockMoved = false;
 		_shouldRepaintScoreBar = false;
@@ -819,6 +820,7 @@ public class TetrisView extends SurfaceView implements Callback {
 		// _holder is used to retrieve Canvas object of the current SurfaceView
 		private SurfaceHolder _myHolder;
 		private boolean _running;
+		private boolean _justStart;
 
 		public TetrisThread(SurfaceHolder holder) {
 			_myHolder = holder;
@@ -840,6 +842,28 @@ public class TetrisView extends SurfaceView implements Callback {
 				// finest granularity to update is100 milis
 				if (elapsed < MIN_GRANULARITY)
 					continue;
+
+				// if the thread is just brought to front/game just started, we
+				// need to redraw the entire screen
+				// if the entire screen is not redrawn but the scoreBar redraw
+				// is called, the dirty rect will be set to entire screen by
+				// _myHolder.lockCanvas(_scoreBarRect)-
+				// because all other parts are not drawn yet, the entire screen
+				// is considered 'dirty'
+				if (_justStart) {
+					try {
+						canvas = _myHolder.lockCanvas(null);
+						synchronized (_myHolder) {
+							updateDroppedLocation();
+							drawComponents(canvas);
+							_justStart = false;
+						}
+					} finally {
+						if (canvas != null) {
+							_myHolder.unlockCanvasAndPost(canvas);
+						}
+					}
+				}
 
 				// if we are moving the block, then we need to reDraw
 				// immediately (within the next 100 mili time window)

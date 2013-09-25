@@ -76,6 +76,7 @@ public class TetrisView extends SurfaceView implements Callback {
 	// _currentBlockPoints is used to represent the blocks occupied by current
 	// dropping block
 	private Set<Point> _currentBlockPoints;
+	private Set<Point> _currentPreviewBlockPoints;
 	private List<Point> _backList;
 
 	private Point _upperLeft;
@@ -186,6 +187,7 @@ public class TetrisView extends SurfaceView implements Callback {
 		_scoreBarPaint = new Paint();
 		_scoreBarPaint.setColor(SCORE_BAR_COLOR);
 		_currentBlockPoints = new HashSet<Point>();
+		_currentPreviewBlockPoints = new HashSet<Point>();
 		_backList = new LinkedList<Point>();
 		_upperLeft = new Point(-1, -1);
 		shakeAnimation = AnimationUtils.loadAnimation(context,
@@ -223,6 +225,7 @@ public class TetrisView extends SurfaceView implements Callback {
 			_isFastDropping = false;
 			boolean gameOver = addBlockToMatrix(_gameMatrix, MATRIX_HEIGHT - 1,
 					4, _nextBlock, true);
+			updateDroppedLocation();
 			if (gameOver) {
 				stopGame();
 			}
@@ -444,6 +447,7 @@ public class TetrisView extends SurfaceView implements Callback {
 				if (_gameMatrix[i][j] == PREVIEW_DROPPED_BLOCK_COLOR) {
 					_gameMatrix[i][j] = INITIAL_BLOCK_COLOR;
 				}
+
 			}
 			// move to the start of next line
 			currentPoint.offset(-MATRIX_WIDTH * _blockEdgeLength,
@@ -636,7 +640,8 @@ public class TetrisView extends SurfaceView implements Callback {
 				// increment an additional line
 				// if we hit bottom boundary then stop probing
 				if (p.x - probDeltaX < 0
-						|| _gameMatrix[p.x - probDeltaX][p.y] != INITIAL_BLOCK_COLOR) {
+						|| ((_gameMatrix[p.x - probDeltaX][p.y] != INITIAL_BLOCK_COLOR) && (_gameMatrix[p.x
+								- probDeltaX][p.y] != PREVIEW_DROPPED_BLOCK_COLOR))) {
 					probDeltaX--;
 					break here;
 				}
@@ -645,7 +650,12 @@ public class TetrisView extends SurfaceView implements Callback {
 			probDeltaX++;
 		}
 		// now prbDeltaY is in place, need to set the preview block
-		// points
+		// points, we need to first clear the previous preview block points
+		for (Point p : _currentPreviewBlockPoints) {
+			if (_gameMatrix[p.x][p.y] == PREVIEW_DROPPED_BLOCK_COLOR)
+				_gameMatrix[p.x][p.y] = INITIAL_BLOCK_COLOR;
+		}
+		_currentPreviewBlockPoints.clear();
 		for (Point p : _currentBlockPoints) {
 			tmpPoint.set(p.x - probDeltaX, p.y);
 			// if currentBlock overlaps with previewPoint, draw
@@ -653,6 +663,7 @@ public class TetrisView extends SurfaceView implements Callback {
 			if (_currentBlockPoints.contains(tmpPoint))
 				continue;
 			// otherwise set this block to preview color
+			_currentPreviewBlockPoints.add(new Point(p.x - probDeltaX, p.y));
 			_gameMatrix[tmpPoint.x][tmpPoint.y] = PREVIEW_DROPPED_BLOCK_COLOR;
 		}
 	}

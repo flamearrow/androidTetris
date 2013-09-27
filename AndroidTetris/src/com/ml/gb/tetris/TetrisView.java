@@ -865,7 +865,7 @@ public class TetrisView extends SurfaceView implements Callback {
 					}
 				}
 
-				// if we are moving the block, then we need to reDraw
+				// if we are moving the block, then we need to reDraw 
 				// immediately (within the next 100 mili time window)
 				if (_currentBlockMoved) {
 					try {

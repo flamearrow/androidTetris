@@ -717,49 +717,53 @@ public class TetrisView extends SurfaceView implements Callback {
 	 * @return succeed or not
 	 */
 	public boolean rotate() {
-		_currentBlock.rotate();
+		if (!_isFastDropping) {
+			_currentBlock.rotate();
 
-		int count = 0;
-		int value = _currentBlock.getHexValue();
-		int color = _currentBlock.color;
-		Point tmpP = new Point(-1, -1);
+			int count = 0;
+			int value = _currentBlock.getHexValue();
+			int color = _currentBlock.color;
+			Point tmpP = new Point(-1, -1);
 
-		for (int i = _upperLeft.x; i > _upperLeft.x - 4; i--) {
-			for (int j = _upperLeft.y; j < _upperLeft.y + 4; j++) {
-				if (((value >> (count++)) & 1) > 0) {
-					tmpP.set(i, j);
-					// if it's outside of screen or it's already occupied then
-					// we can't rotate
+			for (int i = _upperLeft.x; i > _upperLeft.x - 4; i--) {
+				for (int j = _upperLeft.y; j < _upperLeft.y + 4; j++) {
+					if (((value >> (count++)) & 1) > 0) {
+						tmpP.set(i, j);
+						// if it's outside of screen or it's already occupied
+						// then
+						// we can't rotate
 
-					if (j < 0
-							|| j >= MATRIX_WIDTH
-							|| (!_currentBlockPoints.contains(tmpP) && _gameMatrix[i][j] != INITIAL_BLOCK_COLOR)) {
-						_currentBlock.rRotate();
-						return false;
+						if (j < 0
+								|| j >= MATRIX_WIDTH
+								|| (!_currentBlockPoints.contains(tmpP) && _gameMatrix[i][j] != INITIAL_BLOCK_COLOR)) {
+							_currentBlock.rRotate();
+							return false;
+						}
 					}
 				}
 			}
-		}
 
-		// safe to update now, needs to be reDrawn immediately
-		for (Point p : _currentBlockPoints) {
-			_gameMatrix[p.x][p.y] = INITIAL_BLOCK_COLOR;
-		}
+			// safe to update now, needs to be reDrawn immediately
+			for (Point p : _currentBlockPoints) {
+				_gameMatrix[p.x][p.y] = INITIAL_BLOCK_COLOR;
+			}
 
-		_currentBlockPoints.clear();
-		count = 0;
-		for (int i = _upperLeft.x; i > _upperLeft.x - 4; i--) {
-			for (int j = _upperLeft.y; j < _upperLeft.y + 4; j++) {
-				if (((value >> (count++)) & 1) > 0) {
-					_gameMatrix[i][j] = color;
-					_currentBlockPoints.add(new Point(i, j));
+			_currentBlockPoints.clear();
+			count = 0;
+			for (int i = _upperLeft.x; i > _upperLeft.x - 4; i--) {
+				for (int j = _upperLeft.y; j < _upperLeft.y + 4; j++) {
+					if (((value >> (count++)) & 1) > 0) {
+						_gameMatrix[i][j] = color;
+						_currentBlockPoints.add(new Point(i, j));
+					}
 				}
 			}
-		}
-		updateDroppedLocation();
-		_currentBlockMoved = true;
+			updateDroppedLocation();
+			_currentBlockMoved = true;
 
-		return true;
+			return true;
+		} else
+			return false;
 	}
 
 	@Override

@@ -15,9 +15,9 @@
         android:textSize="@dimen/logo_font_size" />
 
     <com.ml.gb.tetris.views.MenuView
+        android:id="@+id/menuview"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"
-        android="@+id/menuview" />
+        android:layout_weight="1" />
 
 </LinearLayout>

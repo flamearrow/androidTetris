@@ -4,9 +4,13 @@
     <string name="app_name">Tetris</string>
     <string name="action_settings">Settings</string>
     <string name="hello_world">Hello world!</string>
-	
     <string name="tetris">Tetris</string>
     <string name="level">level</string>
     <string name="score">score</string>
-    
+    <string name="game_over">Game Over</string>
+    <string name="result_score">Your Score: </string>
+    <string name="restart">restart</string>
+    <string name="back">back</string>
+    <string name="tetrislogo">TETRIS</string>
+
 </resources>

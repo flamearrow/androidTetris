@@ -1,4 +1,4 @@
-package com.ml.gb.tetris;
+package com.ml.gb.tetris.views;
 
 
 /**

@@ -1,4 +1,4 @@
-package com.ml.gb.tetris;
+package com.ml.gb.tetris.views;
 
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -6,7 +6,10 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
+import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -23,7 +26,7 @@ import android.view.animation.AnimationUtils;
 import com.ml.gb.R;
 
 /**
- * Tetris will be represented by a 18 * 10 color
+ * Tetris will be represented by a 18 * 10 color matrix
  * 
  * @author flamearrow
  * 
@@ -102,6 +105,8 @@ public class TetrisView extends SurfaceView implements Callback {
 
 	private Rect _scoreBarRect;
 	private Rect _gameMatrixRect;
+
+	private boolean _gameOver;
 
 	private int getRandomColor() {
 		switch (rand.nextInt(7)) {
@@ -195,9 +200,12 @@ public class TetrisView extends SurfaceView implements Callback {
 
 		_scoreBarRect = new Rect();
 		_gameMatrixRect = new Rect();
+
+		_gameOver = false;
 	}
 
 	// pause the game, we want to save game state after returning to game
+	// setting thread running to false actually kills the thread
 	public void pause() {
 		if (_thread != null) {
 			_thread.setRunning(false);
@@ -234,8 +242,44 @@ public class TetrisView extends SurfaceView implements Callback {
 	 * stop game, prompt for new game or not
 	 */
 	private void stopGame() {
-		// TODO implement this
-		Log.d("TetrisView", "gameOver!");
+		// first kill the rendering thread
+		pause();
+		_gameOver = true;
+		// then prompt for newGame or back to menu
+		showGameOverDialog();
+	}
+
+	private void showGameOverDialog() {
+		final AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(
+				getContext());
+		dialogBuilder.setCancelable(false);
+		dialogBuilder.setTitle(getResources().getString(R.string.game_over));
+		dialogBuilder.setPositiveButton(
+				getResources().getString(R.string.restart),
+				new DialogInterface.OnClickListener() {
+
+					@Override
+					public void onClick(DialogInterface dialog, int which) {
+						newGame();
+					}
+				});
+		dialogBuilder.setNegativeButton(
+				getResources().getString(R.string.back),
+				new DialogInterface.OnClickListener() {
+
+					@Override
+					public void onClick(DialogInterface dialog, int which) {
+						Log.d("TetrisView", "show go back to menu");
+					}
+				});
+		((Activity) getContext()).runOnUiThread(new Runnable() {
+
+			@Override
+			public void run() {
+				dialogBuilder.show();
+			}
+
+		});
 	}
 
 	/**
@@ -669,13 +713,11 @@ public class TetrisView extends SurfaceView implements Callback {
 	// ideally we should first check if it's eligible to move then set
 	// _shouldReDrawComponents = true
 	public void moveLeft() {
-		moveCurrentBlock(new Point(0, -1));
-		_currentBlockMoved = true;
+		_currentBlockMoved = moveCurrentBlock(new Point(0, -1));
 	}
 
 	public void moveRight() {
-		moveCurrentBlock(new Point(0, 1));
-		_currentBlockMoved = true;
+		_currentBlockMoved = moveCurrentBlock(new Point(0, 1));
 	}
 
 	/**
@@ -735,11 +777,6 @@ public class TetrisView extends SurfaceView implements Callback {
 		// once the thread is setRunning(false) the for loop will end the
 		// thread, therefore we need to create a new thread
 
-		float scoreBarRight = _blockEdgeLength / 4 + MATRIX_WIDTH
-				* _blockEdgeLength;
-		_scoreBarRect.set(MATRIX_WIDTH * _blockEdgeLength, 0,
-				(int) scoreBarRight, _screenHeight);
-
 		_thread = new TetrisThread(holder);
 		_thread.setRunning(true);
 		_thread.start();
@@ -748,6 +785,12 @@ public class TetrisView extends SurfaceView implements Callback {
 	private void newGame() {
 		initializeParams();
 		initializeMatrix();
+		if (_gameOver) {
+			_gameOver = false;
+			_thread = new TetrisThread(getHolder());
+			_thread.setRunning(true);
+			_thread.start();
+		}
 	}
 
 	private void initializeParams() {
@@ -797,7 +840,7 @@ public class TetrisView extends SurfaceView implements Callback {
 	@Override
 	public void surfaceChanged(SurfaceHolder holder, int format, int width,
 			int height) {
-
+		// Nothing
 	}
 
 	// This is called when you exit the game, should stop the thread. Otherwise
@@ -839,7 +882,7 @@ public class TetrisView extends SurfaceView implements Callback {
 				long currentFrameTime = System.currentTimeMillis();
 				long elapsed = currentFrameTime - previousFrameTime;
 
-				// finest granularity to update is100 milis
+				// finest granularity to update is 100 milis
 				if (elapsed < MIN_GRANULARITY)
 					continue;
 
@@ -865,7 +908,7 @@ public class TetrisView extends SurfaceView implements Callback {
 					}
 				}
 
-				// if we are moving the block, then we need to reDraw 
+				// if we are moving the block, then we need to reDraw
 				// immediately (within the next 100 mili time window)
 				if (_currentBlockMoved) {
 					try {

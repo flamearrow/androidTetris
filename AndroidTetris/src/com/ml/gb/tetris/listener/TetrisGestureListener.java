@@ -3,8 +3,8 @@ package com.ml.gb.tetris.listener;
 import android.view.GestureDetector.SimpleOnGestureListener;
 import android.view.MotionEvent;
 
-import com.ml.gb.tetris.TetrisActivity;
-import com.ml.gb.tetris.TetrisView;
+import com.ml.gb.tetris.activities.TetrisActivity;
+import com.ml.gb.tetris.views.TetrisView;
 
 public class TetrisGestureListener extends SimpleOnGestureListener {
 	private TetrisView _tetrisView;
@@ -53,6 +53,7 @@ public class TetrisGestureListener extends SimpleOnGestureListener {
 		return true;
 	}
 
+	// when finger drags on screen, onScroll() will be called multiple times
 	@Override
 	public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX,
 			float distanceY) {

@@ -1,4 +1,4 @@
-package com.ml.gb.tetris;
+package com.ml.gb.tetris.activities;
 
 import android.app.Activity;
 import android.os.Bundle;
@@ -7,6 +7,7 @@ import android.view.MotionEvent;
 
 import com.ml.gb.R;
 import com.ml.gb.tetris.listener.TetrisGestureListener;
+import com.ml.gb.tetris.views.TetrisView;
 
 public class TetrisActivity extends Activity {
 	private GestureDetector _gesDect;

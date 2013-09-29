@@ -9,13 +9,21 @@ public class MenuGestureListener extends SimpleOnGestureListener {
 	public static final int SCROLL_THRESHOLD = 20;
 	public static final int DIAGNAL_THRESHOLD = 5;
 	private MenuView _menuView;
+	private String LOG_TAG = "MenuGestureListener";
 
 	public MenuGestureListener(MenuView menuView) {
 		_menuView = menuView;
 	}
 
+	// e2 has the coordinates when finger stops
 	@Override
 	public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX,
+			float distanceY) {
+		_menuView.handleScrollEndEvent(e2);
+		return true;
+	}
+
+	public boolean onScrollOld(MotionEvent e1, MotionEvent e2, float distanceX,
 			float distanceY) {
 		float absX = Math.abs(distanceX);
 		float absY = Math.abs(distanceY);

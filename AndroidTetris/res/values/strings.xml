@@ -12,5 +12,6 @@
     <string name="restart">restart</string>
     <string name="back">back</string>
     <string name="tetrislogo">TETRIS</string>
+    <string name="mlgb">MLGB</string>
 
 </resources>

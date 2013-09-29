@@ -44,11 +44,11 @@ public class TetrisView extends SurfaceView implements Callback {
 
 	private static final int BACKGROUND_COLOR = Color.WHITE;
 	private static final int FONT_COLOR = Color.BLACK;
-	private static final int SQUARE_EDGE_COLOR = 0xABCDEF12;
-	private static final int SEPARATOR_COLOR = Color.DKGRAY;
+	private static final int SQUARE_EDGE_COLOR = Color.WHITE;
+	private static final int SEPARATOR_COLOR = Color.GRAY;
 	private static final int SCORE_BAR_COLOR = Color.RED;
-	private static final int INITIAL_BLOCK_COLOR = Color.GRAY;
-	private static final int PREVIEW_DROPPED_BLOCK_COLOR = Color.WHITE;
+	private static final int INITIAL_BLOCK_COLOR = Color.WHITE;
+	private static final int PREVIEW_DROPPED_BLOCK_COLOR = 0xFFEEEEEE;
 
 	private TetrisThread _thread;
 
@@ -109,24 +109,11 @@ public class TetrisView extends SurfaceView implements Callback {
 	private boolean _gameOver;
 
 	private int getRandomColor() {
-		switch (rand.nextInt(7)) {
-		case 0:
-			return Color.BLACK;
-		case 1:
-			return Color.RED;
-		case 2:
-			return Color.GREEN;
-		case 3:
-			return Color.BLUE;
-		case 4:
-			return Color.YELLOW;
-		case 5:
-			return Color.CYAN;
-		case 6:
-			return Color.MAGENTA;
-		default:
-			return Color.WHITE;
+		int ret = 0xFF000000;
+		for (int i = 0; i < 30; i++) {
+			ret |= (rand.nextInt(2) << i);
 		}
+		return ret;
 	}
 
 	public Block.Direction getRandomDirection() {

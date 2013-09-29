@@ -713,11 +713,15 @@ public class TetrisView extends SurfaceView implements Callback {
 	// ideally we should first check if it's eligible to move then set
 	// _shouldReDrawComponents = true
 	public void moveLeft() {
-		_currentBlockMoved = moveCurrentBlock(new Point(0, -1));
+		if (!_isFastDropping) {
+			_currentBlockMoved = moveCurrentBlock(new Point(0, -1));
+		}
 	}
 
 	public void moveRight() {
-		_currentBlockMoved = moveCurrentBlock(new Point(0, 1));
+		if (!_isFastDropping) {
+			_currentBlockMoved = moveCurrentBlock(new Point(0, 1));
+		}
 	}
 
 	/**

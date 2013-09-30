@@ -18,6 +18,8 @@ public class TetrisActivity extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_tetris);
 		_tetrisView = (TetrisView) findViewById(R.id.tetrisActivity);
+		_tetrisView.setHighScores(getSharedPreferences("tetrisHighScores",
+				MODE_PRIVATE));
 		// can also let TetrisActivity implements OnGestureListener, but that
 		// will leave some blank methods
 		_gesDect = new GestureDetector(this, new TetrisGestureListener(this));

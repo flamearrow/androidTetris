@@ -1,15 +1,17 @@
 package com.ml.gb.tetris.views;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
 import android.app.Activity;
-import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.Context;
-import android.content.DialogInterface;
+import android.content.SharedPreferences;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -17,11 +19,18 @@ import android.graphics.Point;
 import android.graphics.Rect;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.SurfaceHolder;
 import android.view.SurfaceHolder.Callback;
 import android.view.SurfaceView;
+import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import com.ml.gb.R;
 
@@ -49,6 +58,11 @@ public class TetrisView extends SurfaceView implements Callback {
 	private static final int SCORE_BAR_COLOR = Color.RED;
 	private static final int INITIAL_BLOCK_COLOR = Color.WHITE;
 	private static final int PREVIEW_DROPPED_BLOCK_COLOR = 0xFFEEEEEE;
+	public static final int HIGH_SCORE_MAX_COUNT = 3;
+
+	private static final String NAME_SCORE_SEPERATOR = ";";
+	private static final String INVALID_NAME_WARNING = "ERROR! name shouldn't contain \""
+			+ NAME_SCORE_SEPERATOR + "\"";
 
 	private TetrisThread _thread;
 
@@ -107,6 +121,14 @@ public class TetrisView extends SurfaceView implements Callback {
 	private Rect _gameMatrixRect;
 
 	private boolean _gameOver;
+
+	private LinkedList<NameScorePair> _highScoreBuffer;
+	private SharedPreferences _highScores;
+	private boolean _newHighScore;
+
+	public void setHighScores(SharedPreferences highScores) {
+		this._highScores = highScores;
+	}
 
 	private int getRandomColor() {
 		int ret = 0xFF000000;
@@ -187,8 +209,9 @@ public class TetrisView extends SurfaceView implements Callback {
 
 		_scoreBarRect = new Rect();
 		_gameMatrixRect = new Rect();
-
+		_highScoreBuffer = new LinkedList<TetrisView.NameScorePair>();
 		_gameOver = false;
+
 	}
 
 	// pause the game, we want to save game state after returning to game
@@ -233,40 +256,153 @@ public class TetrisView extends SurfaceView implements Callback {
 		pause();
 		_gameOver = true;
 		// then prompt for newGame or back to menu
-		showGameOverDialog();
-	}
-
-	private void showGameOverDialog() {
-		final AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(
-				getContext());
-		dialogBuilder.setCancelable(false);
-		dialogBuilder.setTitle(getResources().getString(R.string.game_over));
-		dialogBuilder.setPositiveButton(
-				getResources().getString(R.string.restart),
-				new DialogInterface.OnClickListener() {
-
-					@Override
-					public void onClick(DialogInterface dialog, int which) {
-						newGame();
-					}
-				});
-		dialogBuilder.setNegativeButton(
-				getResources().getString(R.string.back),
-				new DialogInterface.OnClickListener() {
-
-					@Override
-					public void onClick(DialogInterface dialog, int which) {
-						Log.d("TetrisView", "show go back to menu");
-					}
-				});
 		((Activity) getContext()).runOnUiThread(new Runnable() {
-
 			@Override
 			public void run() {
-				dialogBuilder.show();
+				showGameOverDialog();
 			}
 
 		});
+	}
+
+	private class NameScorePair implements Comparable<NameScorePair> {
+		String name;
+		int score;
+
+		NameScorePair(int argScore, String argName) {
+			score = argScore;
+			name = argName;
+		}
+
+		@Override
+		public int compareTo(NameScorePair another) {
+			return score - another.score;
+		}
+
+		@Override
+		public String toString() {
+			return name + NAME_SCORE_SEPERATOR + score;
+		}
+
+	}
+
+	// first query smallest high score, if current score is higher that
+	// then prompt with name field and add the current score
+	// otherwise prompt without name field
+
+	// name-value pairs are not unique items, need to map this:
+	// String rank - Set<String> [name, value]
+	private void showGameOverDialog() {
+		@SuppressWarnings("unchecked")
+		Map<String, String> nameScoreMap = (Map<String, String>) _highScores
+				.getAll();
+		_newHighScore = false;
+		_highScoreBuffer.clear();
+		for (String nameScorePair : nameScoreMap.values()) {
+			int seperatorIndex = nameScorePair.indexOf(NAME_SCORE_SEPERATOR);
+			String name = nameScorePair.substring(0, seperatorIndex);
+			int score = Integer.parseInt(nameScorePair
+					.substring(seperatorIndex + 1));
+			_highScoreBuffer.add(new NameScorePair(score, name));
+		}
+		// if we haven't get enough high score add it anyway
+		if (nameScoreMap.size() < HIGH_SCORE_MAX_COUNT) {
+			_newHighScore = true;
+		}
+		// otherwise we replace the one with smallest score
+		else {
+			Collections.sort(_highScoreBuffer);
+			// after sorting the first is smallest history score, if current
+			// score is higher that that then remove the first and add the
+			// current later
+			if (_score > _highScoreBuffer.getFirst().score) {
+				_highScoreBuffer.removeFirst();
+				_newHighScore = true;
+			}
+		}
+
+		Log.d("TetrisView", nameScoreMap.toString());
+
+		LayoutInflater inflater = (LayoutInflater) ((Activity) getContext())
+				.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+		final View gameOverView = _newHighScore ? inflater.inflate(
+				R.layout.new_high_score, null) : inflater.inflate(
+				R.layout.game_over, null);
+		TextView scoreText = (TextView) gameOverView
+				.findViewById(R.id.game_over_score_id);
+		scoreText.setText("" + _score);
+
+		final Dialog gameOverDialog = new Dialog(getContext());
+		gameOverDialog.setContentView(gameOverView);
+		gameOverDialog.setCancelable(false);
+		gameOverDialog.setTitle(getResources().getString(R.string.game_over));
+		gameOverDialog.show();
+		((Button) (gameOverView.findViewById(R.id.restart_button)))
+				.setOnClickListener(new OnClickListener() {
+
+					@Override
+					public void onClick(View v) {
+						if (tryUpdateHighScore(gameOverView)) {
+							gameOverDialog.dismiss();
+							newGame();
+						} else {
+							Toast t = Toast.makeText(getContext(),
+									INVALID_NAME_WARNING, Toast.LENGTH_SHORT);
+							t.setGravity(Gravity.TOP, 0, _screenHeight / 4);
+							t.show();
+						}
+					}
+				});
+
+		((Button) (gameOverView.findViewById(R.id.back_button)))
+				.setOnClickListener(new OnClickListener() {
+
+					@Override
+					public void onClick(View v) {
+						if (tryUpdateHighScore(gameOverView)) {
+							gameOverDialog.dismiss();
+							((Activity) getContext()).finish();
+						} else {
+							Toast t = Toast.makeText(getContext(),
+									INVALID_NAME_WARNING, Toast.LENGTH_SHORT);
+							t.setGravity(Gravity.TOP, 0, _screenHeight / 4);
+							t.show();
+						}
+					}
+				});
+		gameOverDialog.show();
+
+	}
+
+	/**
+	 * if need to add high score, then gameOverView should contain
+	 * high_score_name, check if it contains SEPERATOR, if it does then don't do
+	 * anything
+	 * 
+	 * @param gameOverView
+	 * @return whether the caller dialog should be dismissed
+	 */
+	private boolean tryUpdateHighScore(View gameOverView) {
+		if (_newHighScore) {
+			String newName = ((EditText) (gameOverView
+					.findViewById(R.id.high_score_name))).getText().toString();
+			if (newName.contains(NAME_SCORE_SEPERATOR)) {
+				return false;
+			} else {
+				SharedPreferences.Editor highScoreEditor = _highScores.edit();
+				highScoreEditor.clear();
+				_highScoreBuffer.add(new NameScorePair(_score, newName));
+				Collections.sort(_highScoreBuffer);
+				int rank = _highScoreBuffer.size();
+				for (NameScorePair nsp : _highScoreBuffer) {
+					highScoreEditor.putString("" + rank--, nsp.toString());
+				}
+				highScoreEditor.apply();
+				return true;
+			}
+		} else
+			return true;
+
 	}
 
 	/**

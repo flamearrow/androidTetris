@@ -8,9 +8,10 @@
     <string name="level">level</string>
     <string name="score">score</string>
     <string name="game_over">Game Over</string>
+    <string name="new_high_score">New high score!  Enter your name:</string>
     <string name="result_score">Your Score: </string>
-    <string name="restart">restart</string>
-    <string name="back">back</string>
+    <string name="restart">RESTART</string>
+    <string name="back">BACK</string>
     <string name="tetrislogo">TETRIS</string>
     <string name="mlgb">MLGB</string>
 

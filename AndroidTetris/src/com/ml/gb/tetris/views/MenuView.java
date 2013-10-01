@@ -307,6 +307,10 @@ public class MenuView extends SurfaceView implements Callback {
 		showPrompt(MSG_INCORRECT_TOUCH);
 	}
 
+	public void clearToast() {
+		_promtToast.cancel();
+	}
+
 	@Override
 	public void surfaceChanged(SurfaceHolder holder, int format, int width,
 			int height) {

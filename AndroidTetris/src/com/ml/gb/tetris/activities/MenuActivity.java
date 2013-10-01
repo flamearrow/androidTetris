@@ -7,12 +7,19 @@ import com.ml.gb.R;
 import com.ml.gb.tetris.views.MenuView;
 
 public class MenuActivity extends Activity {
+	private MenuView _mV;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_menu);
-		MenuView mV = (MenuView) findViewById(R.id.menuview);
-		mV.setMenuActivity(this);
+		_mV = (MenuView) findViewById(R.id.menuview);
+		_mV.setMenuActivity(this);
+	}
+
+	@Override
+	protected void onPause() {
+		super.onPause();
+		_mV.clearToast();
 	}
 }

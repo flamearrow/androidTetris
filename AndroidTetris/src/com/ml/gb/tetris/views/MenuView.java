@@ -21,6 +21,7 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceHolder.Callback;
 import android.view.SurfaceView;
 
+import com.ml.gb.tetris.activities.HighScoreListActivity;
 import com.ml.gb.tetris.activities.MenuActivity;
 import com.ml.gb.tetris.activities.TetrisActivity;
 import com.ml.gb.tetris.listener.MenuGestureListener;
@@ -258,6 +259,8 @@ public class MenuView extends SurfaceView implements Callback {
 		} else if (_currentBlockPoints.equals(_upperRightCornerPoints)) {
 			// highscore
 			Log.d(DEBUG_TAG, "should print highscore");
+			getContext().startActivity(
+					new Intent(getContext(), HighScoreListActivity.class));
 		} else if (_currentBlockPoints.equals(_lowerLeftCornerPoints)) {
 			// start game with turorial
 			Log.d(DEBUG_TAG, "should start game with tutorial");

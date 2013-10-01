@@ -6,6 +6,7 @@ import android.view.GestureDetector;
 import android.view.MotionEvent;
 
 import com.ml.gb.R;
+import com.ml.gb.tetris.TetrisConstants;
 import com.ml.gb.tetris.listener.TetrisGestureListener;
 import com.ml.gb.tetris.views.TetrisView;
 
@@ -18,8 +19,8 @@ public class TetrisActivity extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_tetris);
 		_tetrisView = (TetrisView) findViewById(R.id.tetrisActivity);
-		_tetrisView.setHighScores(getSharedPreferences("tetrisHighScores",
-				MODE_PRIVATE));
+		_tetrisView.setHighScores(getSharedPreferences(
+				TetrisConstants.TETRIS_SHAREDPREFENCES_NAME, MODE_PRIVATE));
 		// can also let TetrisActivity implements OnGestureListener, but that
 		// will leave some blank methods
 		_gesDect = new GestureDetector(this, new TetrisGestureListener(this));

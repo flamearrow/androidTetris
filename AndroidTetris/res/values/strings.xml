@@ -6,7 +6,7 @@
     <string name="hello_world">Hello world!</string>
     <string name="tetris">Tetris</string>
     <string name="level">level</string>
-    <string name="score">score</string>
+    <string name="score">SCORE</string>
     <string name="game_over">Game Over</string>
     <string name="new_high_score">New high score!  Enter your name:</string>
     <string name="result_score">Your Score: </string>
@@ -14,5 +14,12 @@
     <string name="back">BACK</string>
     <string name="tetrislogo">TETRIS</string>
     <string name="mlgb">MLGB</string>
+    <string name="rank">RANK</string>
+    <string name="name">NAME</string>
+    <string name="high_score">HIGH SCORES</string>
+    <string name="clear_high_score">Clear</string>
+    <string name="clear_confirm">Clear all high scores</string>
+    <string name="clear_confirm_msg">Are you sure? \nAll high scores will be cleared</string>
+    <string name="cancel">Cancel</string>
 
 </resources>

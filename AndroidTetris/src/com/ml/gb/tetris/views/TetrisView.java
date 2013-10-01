@@ -33,6 +33,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.ml.gb.R;
+import com.ml.gb.tetris.NameScorePair;
+import com.ml.gb.tetris.TetrisConstants;
 
 /**
  * Tetris will be represented by a 18 * 10 color matrix
@@ -60,9 +62,8 @@ public class TetrisView extends SurfaceView implements Callback {
 	private static final int PREVIEW_DROPPED_BLOCK_COLOR = 0xFFEEEEEE;
 	public static final int HIGH_SCORE_MAX_COUNT = 3;
 
-	private static final String NAME_SCORE_SEPERATOR = ";";
-	private static final String INVALID_NAME_WARNING = "ERROR! name shouldn't contain \""
-			+ NAME_SCORE_SEPERATOR + "\"";
+	private static final String INVALID_NAME_WARNING = "ERROR! name can't be null and shouldn't contain \""
+			+ TetrisConstants.NAME_SCORE_SEPERATOR + "\"";
 
 	private TetrisThread _thread;
 
@@ -209,7 +210,7 @@ public class TetrisView extends SurfaceView implements Callback {
 
 		_scoreBarRect = new Rect();
 		_gameMatrixRect = new Rect();
-		_highScoreBuffer = new LinkedList<TetrisView.NameScorePair>();
+		_highScoreBuffer = new LinkedList<NameScorePair>();
 		_gameOver = false;
 
 	}
@@ -265,27 +266,6 @@ public class TetrisView extends SurfaceView implements Callback {
 		});
 	}
 
-	private class NameScorePair implements Comparable<NameScorePair> {
-		String name;
-		int score;
-
-		NameScorePair(int argScore, String argName) {
-			score = argScore;
-			name = argName;
-		}
-
-		@Override
-		public int compareTo(NameScorePair another) {
-			return score - another.score;
-		}
-
-		@Override
-		public String toString() {
-			return name + NAME_SCORE_SEPERATOR + score;
-		}
-
-	}
-
 	// first query smallest high score, if current score is higher that
 	// then prompt with name field and add the current score
 	// otherwise prompt without name field
@@ -299,7 +279,8 @@ public class TetrisView extends SurfaceView implements Callback {
 		_newHighScore = false;
 		_highScoreBuffer.clear();
 		for (String nameScorePair : nameScoreMap.values()) {
-			int seperatorIndex = nameScorePair.indexOf(NAME_SCORE_SEPERATOR);
+			int seperatorIndex = nameScorePair
+					.indexOf(TetrisConstants.NAME_SCORE_SEPERATOR);
 			String name = nameScorePair.substring(0, seperatorIndex);
 			int score = Integer.parseInt(nameScorePair
 					.substring(seperatorIndex + 1));
@@ -315,7 +296,7 @@ public class TetrisView extends SurfaceView implements Callback {
 			// after sorting the first is smallest history score, if current
 			// score is higher that that then remove the first and add the
 			// current later
-			if (_score > _highScoreBuffer.getFirst().score) {
+			if (_score > _highScoreBuffer.getFirst().getScore()) {
 				_highScoreBuffer.removeFirst();
 				_newHighScore = true;
 			}
@@ -386,7 +367,8 @@ public class TetrisView extends SurfaceView implements Callback {
 		if (_newHighScore) {
 			String newName = ((EditText) (gameOverView
 					.findViewById(R.id.high_score_name))).getText().toString();
-			if (newName.contains(NAME_SCORE_SEPERATOR)) {
+			if (newName.contains(TetrisConstants.NAME_SCORE_SEPERATOR)
+					|| newName.length() == 0) {
 				return false;
 			} else {
 				SharedPreferences.Editor highScoreEditor = _highScores.edit();

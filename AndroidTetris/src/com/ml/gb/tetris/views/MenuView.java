@@ -5,22 +5,27 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Paint.Align;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.support.v4.view.MotionEventCompat;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.GestureDetector;
+import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceHolder.Callback;
 import android.view.SurfaceView;
+import android.widget.Toast;
 
+import com.ml.gb.R;
 import com.ml.gb.tetris.activities.HighScoreListActivity;
 import com.ml.gb.tetris.activities.MenuActivity;
 import com.ml.gb.tetris.activities.TetrisActivity;
@@ -40,6 +45,7 @@ public class MenuView extends SurfaceView implements Callback {
 	private int _viewWidth;
 	private int _viewHeight;
 	private int _edgeLength;
+	private int _edgeGapWidth;
 	private static final int MENU_MATRIX_EDGE = 10;
 	private GestureDetector _gesDect;
 
@@ -47,6 +53,7 @@ public class MenuView extends SurfaceView implements Callback {
 
 	private Paint _menuPaint;
 	private Paint _backgroundPaint;
+	private Paint _optionPaint;
 
 	private Set<Point> _currentBlockPoints;
 	// represents the point of four corners
@@ -61,22 +68,38 @@ public class MenuView extends SurfaceView implements Callback {
 
 	private static final int BACKGROUND_COLOR = Color.WHITE;
 
-	private static final int SQUARE_EDGE_COLOR = Color.RED;
+	private static final int SQUARE_EDGE_COLOR = Color.WHITE;
 
 	private static final int INITIAL_BLOCK_COLOR = Color.WHITE;
 
-	private static final int SET_BLOCK_COLOR = Color.YELLOW;
+	private static final int SET_BLOCK_COLOR = Color.GRAY;
 
-	private static final int SQUARE_EDGE_WIDTH = 2;
+	private static final int CORNER_HIGHLIGHT_COLOR = Color.YELLOW;
+
+	private static final int OPTION_EDGE_COLOR = Color.LTGRAY;
+
+	private static final String MSG_INCORRECT_TOUCH = "Drag the block to a corner!";
+
+	private static final String MSG_NEW_GAME = "NEW GAME";
+
+	private static final String MSG_HIGH_SCORE = "HIGH SCORES";
+
+	private static final String MSG_TUTORIAL = "TUTORIAL";
+
+	private static final String MSG_EXIT = "EXIT";
 
 	private boolean _isDragging;
 
 	private Rect _currentHighlightRect;
 
+	private Toast _promtToast;
+
+	@SuppressLint("ShowToast")
 	public MenuView(Context context, AttributeSet attrs) {
 		super(context, attrs);
 		getHolder().addCallback(this);
 		_menuPaint = new Paint();
+		_optionPaint = new Paint();
 		_backgroundPaint = new Paint();
 		_backgroundPaint.setColor(BACKGROUND_COLOR);
 		_currentBlockPoints = new HashSet<Point>();
@@ -90,6 +113,9 @@ public class MenuView extends SurfaceView implements Callback {
 		_isDragging = false;
 		_currentHighlightRect = new Rect();
 
+		// supress warning, show toast later
+		_promtToast = Toast.makeText(getContext(), "", Toast.LENGTH_SHORT);
+
 	}
 
 	// record the size of the current view - note this is not full screen!
@@ -100,7 +126,8 @@ public class MenuView extends SurfaceView implements Callback {
 		_viewWidth = w;
 		_viewHeight = h;
 		_edgeLength = _viewWidth / MENU_MATRIX_EDGE;
-
+		_edgeGapWidth = _edgeLength / TetrisView.EDGE_GAP_RATIO;
+		_promtToast.setGravity(Gravity.TOP, 0, _viewHeight / 4);
 		// resetHighlightBlock();
 
 		// initialize four corner point sets
@@ -159,6 +186,25 @@ public class MenuView extends SurfaceView implements Callback {
 		drawMenuBlocks();
 	}
 
+	private Option checkAtCorner(Point p) {
+		if (_upperLeftCornerPoints.contains(p)) {
+			return Option.NEW_GAME;
+		} else if (_upperRightCornerPoints.contains(p)) {
+			return Option.HIGH_SCORE;
+		} else if (_lowerLeftCornerPoints.contains(p)) {
+			return Option.TUTORIAL;
+		} else if (_lowerRightCornerPoints.contains(p)) {
+			return Option.EXIT;
+		} else {
+			return Option.NONE;
+		}
+	}
+
+	private void showPrompt(String s) {
+		_promtToast.setText(s);
+		_promtToast.show();
+	}
+
 	private void drawMenuBlocks() {
 		Canvas canvas = null;
 		try {
@@ -166,7 +212,10 @@ public class MenuView extends SurfaceView implements Callback {
 			Point drawingP = new Point(0, 0);
 			Point setP = new Point();
 			synchronized (_holder) {
+				// draw background
 				canvas.drawRect(0, 0, _viewWidth, _viewHeight, _backgroundPaint);
+
+				// draw the highlighted block
 				for (int i = 0; i < MENU_MATRIX_EDGE; i++) {
 					for (int j = 0; j < MENU_MATRIX_EDGE; j++) {
 						setP.set(j, i);
@@ -174,19 +223,73 @@ public class MenuView extends SurfaceView implements Callback {
 						canvas.drawRect(drawingP.x, drawingP.y, drawingP.x
 								+ _edgeLength, drawingP.y + _edgeLength,
 								_menuPaint);
-						_menuPaint
-								.setColor(_currentBlockPoints.contains(setP) ? SET_BLOCK_COLOR
-										: INITIAL_BLOCK_COLOR);
-						canvas.drawRect(drawingP.x + SQUARE_EDGE_WIDTH,
-								drawingP.y + SQUARE_EDGE_WIDTH, drawingP.x
-										+ _edgeLength - SQUARE_EDGE_WIDTH,
-								drawingP.y + _edgeLength - SQUARE_EDGE_WIDTH,
-								_menuPaint);
+						if (_currentBlockPoints.contains(setP)) {
+
+							switch (checkAtCorner(setP)) {
+							case NEW_GAME:
+								_menuPaint.setColor(CORNER_HIGHLIGHT_COLOR);
+								showPrompt(MSG_NEW_GAME);
+								break;
+							case HIGH_SCORE:
+								_menuPaint.setColor(CORNER_HIGHLIGHT_COLOR);
+								showPrompt(MSG_HIGH_SCORE);
+								break;
+							case TUTORIAL:
+								_menuPaint.setColor(CORNER_HIGHLIGHT_COLOR);
+								showPrompt(MSG_TUTORIAL);
+								break;
+							case EXIT:
+								_menuPaint.setColor(CORNER_HIGHLIGHT_COLOR);
+								showPrompt(MSG_EXIT);
+								break;
+							case NONE:
+								_menuPaint.setColor(SET_BLOCK_COLOR);
+								break;
+							}
+
+						} else {
+							_menuPaint.setColor(INITIAL_BLOCK_COLOR);
+						}
+						canvas.drawRect(drawingP.x + _edgeGapWidth, drawingP.y
+								+ _edgeGapWidth, drawingP.x + _edgeLength
+								- _edgeGapWidth, drawingP.y + _edgeLength
+								- _edgeGapWidth, _menuPaint);
 						drawingP.offset(_edgeLength, 0);
 					}
 					drawingP.offset(-MENU_MATRIX_EDGE * _edgeLength,
 							_edgeLength);
 				}
+
+				// draw options at four corners
+				_optionPaint.setColor(OPTION_EDGE_COLOR);
+				_optionPaint.setStrokeWidth(_edgeGapWidth);
+				_optionPaint.setStyle(Paint.Style.STROKE);
+				canvas.drawRect(0, 0, 2 * _edgeLength, 2 * _edgeLength,
+						_optionPaint);
+				canvas.drawRect(_viewWidth - 2 * _edgeLength, 0, _viewWidth,
+						2 * _edgeLength, _optionPaint);
+				canvas.drawRect(0, _viewWidth - 2 * _edgeLength,
+						2 * _edgeLength, _viewWidth, _optionPaint);
+				canvas.drawRect(_viewWidth - 2 * _edgeLength, _viewWidth - 2
+						* _edgeLength, _viewWidth, _viewWidth, _optionPaint);
+				// draw text
+				_optionPaint.setColor(getResources().getColor(
+						R.color.light_orange));
+				_optionPaint.setStrokeWidth(0);
+				_optionPaint.setTextSize(_edgeLength);
+				_optionPaint.setTextAlign(Align.CENTER);
+				float offset = _edgeLength;
+				canvas.drawText(getResources().getString(R.string.new_game),
+						offset, offset * 4 / 3, _optionPaint);
+				canvas.drawText(
+						getResources().getString(R.string.high_score_option),
+						_viewWidth - offset, offset * 4 / 3, _optionPaint);
+				canvas.drawText(getResources().getString(R.string.tutorial),
+						offset, _viewWidth - offset * 2 / 3, _optionPaint);
+				canvas.drawText(getResources().getString(R.string.exit),
+						_viewWidth - offset, _viewWidth - offset * 2 / 3,
+						_optionPaint);
+
 			}
 		} finally {
 			if (canvas != null) {
@@ -201,6 +304,7 @@ public class MenuView extends SurfaceView implements Callback {
 		_holder = holder;
 		resetHighlightBlock();
 		drawAll();
+		showPrompt(MSG_INCORRECT_TOUCH);
 	}
 
 	@Override
@@ -252,19 +356,21 @@ public class MenuView extends SurfaceView implements Callback {
 	public void checkPositionAndReset() {
 		_isDragging = false;
 		if (_currentBlockPoints.equals(_upperLeftCornerPoints)) {
+			_promtToast.cancel();
 			// start game
-			Log.d(DEBUG_TAG, "should start game");
 			getContext().startActivity(
 					new Intent(getContext(), TetrisActivity.class));
 		} else if (_currentBlockPoints.equals(_upperRightCornerPoints)) {
+			_promtToast.cancel();
 			// highscore
-			Log.d(DEBUG_TAG, "should print highscore");
 			getContext().startActivity(
 					new Intent(getContext(), HighScoreListActivity.class));
 		} else if (_currentBlockPoints.equals(_lowerLeftCornerPoints)) {
-			// start game with turorial
+			_promtToast.cancel();
+			// TODO: start game with turorial
 			Log.d(DEBUG_TAG, "should start game with tutorial");
 		} else if (_currentBlockPoints.equals(_lowerRightCornerPoints)) {
+			_promtToast.cancel();
 			// exit
 			_menuActivity.finish();
 		} else {
@@ -331,10 +437,11 @@ public class MenuView extends SurfaceView implements Callback {
 			checkPositionAndReset();
 		}
 		if (action == MotionEvent.ACTION_DOWN) {
-			// TODO: check if the event happens on the current highlight block
 			if (_currentHighlightRect.contains((int) event.getX(),
 					(int) event.getY())) {
 				_isDragging = true;
+			} else {
+				showPrompt(MSG_INCORRECT_TOUCH);
 			}
 		}
 		_gesDect.onTouchEvent(event);
@@ -384,5 +491,9 @@ public class MenuView extends SurfaceView implements Callback {
 
 	public void setMenuActivity(MenuActivity _menuActivity) {
 		this._menuActivity = _menuActivity;
+	}
+
+	private enum Option {
+		NEW_GAME, TUTORIAL, EXIT, HIGH_SCORE, NONE;
 	}
 }

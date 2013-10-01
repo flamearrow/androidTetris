@@ -11,7 +11,7 @@
         android:layout_marginTop="10dp"
         android:gravity="center"
         android:text="@string/tetrislogo"
-        android:textColor="@color/light_orange"
+        android:textColor="@color/dark_orange"
         android:textSize="@dimen/logo_font_size" />
 
     <com.ml.gb.tetris.views.MenuView

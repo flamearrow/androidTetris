@@ -16,10 +16,14 @@
     <string name="mlgb">MLGB</string>
     <string name="rank">RANK</string>
     <string name="name">NAME</string>
-    <string name="high_score">HIGH SCORES</string>
+    <string name="high_score">High Scores</string>
     <string name="clear_high_score">Clear</string>
     <string name="clear_confirm">Clear all high scores</string>
     <string name="clear_confirm_msg">Are you sure? \nAll high scores will be cleared</string>
     <string name="cancel">Cancel</string>
+    <string name="new_game">N</string>
+    <string name="tutorial">T</string>
+    <string name="exit">E</string>
+    <string name="high_score_option">H</string>
 
 </resources>

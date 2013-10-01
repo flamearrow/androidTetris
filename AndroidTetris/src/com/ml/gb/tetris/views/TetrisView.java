@@ -44,10 +44,10 @@ import com.ml.gb.tetris.TetrisConstants;
  */
 public class TetrisView extends SurfaceView implements Callback {
 	private Random rand = new Random();
+	static final int EDGE_GAP_RATIO = 16;
 	private static final int MATRIX_HEIGHT = 26;
 	private static final int MATRIX_WIDTH = 12;
 	private static final int PREVIEW_EDGE = 4;
-	private static final int SQUARE_EDGE_WIDTH = 2;
 	private static final double GOLDEN_RATIO = 0.618;
 	private static final float SCORE_BAR_DELTA = 2.0f;
 	// we try to refresh the screen every MIN_GRANULARITY milis
@@ -62,7 +62,7 @@ public class TetrisView extends SurfaceView implements Callback {
 	private static final int PREVIEW_DROPPED_BLOCK_COLOR = 0xFFEEEEEE;
 	public static final int HIGH_SCORE_MAX_COUNT = 3;
 
-	private static final String INVALID_NAME_WARNING = "ERROR! name can't be null and shouldn't contain \""
+	private static final String INVALID_NAME_WARNING = "ERROR!\nname can't be null and shouldn't contain \""
 			+ TetrisConstants.NAME_SCORE_SEPERATOR + "\"";
 
 	private TetrisThread _thread;
@@ -117,6 +117,7 @@ public class TetrisView extends SurfaceView implements Callback {
 	// the total width is shared by gameSection width, previewSection with
 	// and a separator
 	private int _blockEdgeLength;
+	private int _squareGapWidth;
 
 	private Rect _scoreBarRect;
 	private Rect _gameMatrixRect;
@@ -582,10 +583,10 @@ public class TetrisView extends SurfaceView implements Callback {
 						currentPoint.y, _gameMatrixPaint);
 				// draw square
 				_gameMatrixPaint.setColor(_gameMatrix[i][j]);
-				canvas.drawRect(currentPoint.x + SQUARE_EDGE_WIDTH,
-						currentPoint.y - _blockEdgeLength + SQUARE_EDGE_WIDTH,
-						currentPoint.x + _blockEdgeLength - SQUARE_EDGE_WIDTH,
-						currentPoint.y - SQUARE_EDGE_WIDTH, _gameMatrixPaint);
+				canvas.drawRect(currentPoint.x + _squareGapWidth,
+						currentPoint.y - _blockEdgeLength + _squareGapWidth,
+						currentPoint.x + _blockEdgeLength - _squareGapWidth,
+						currentPoint.y - _squareGapWidth, _gameMatrixPaint);
 				currentPoint.offset(_blockEdgeLength, 0);
 				// if we just drew a preview block, need to reset its color
 				if (_gameMatrix[i][j] == PREVIEW_DROPPED_BLOCK_COLOR) {
@@ -635,10 +636,10 @@ public class TetrisView extends SurfaceView implements Callback {
 						currentPoint.y, _previewMatrixPaint);
 				// draw square
 				_previewMatrixPaint.setColor(_previewMatrix[i][j]);
-				canvas.drawRect(currentPoint.x + SQUARE_EDGE_WIDTH,
-						currentPoint.y - _blockEdgeLength + SQUARE_EDGE_WIDTH,
-						currentPoint.x + _blockEdgeLength - SQUARE_EDGE_WIDTH,
-						currentPoint.y - SQUARE_EDGE_WIDTH, _previewMatrixPaint);
+				canvas.drawRect(currentPoint.x + _squareGapWidth,
+						currentPoint.y - _blockEdgeLength + _squareGapWidth,
+						currentPoint.x + _blockEdgeLength - _squareGapWidth,
+						currentPoint.y - _squareGapWidth, _previewMatrixPaint);
 				currentPoint.offset(_blockEdgeLength, 0);
 			}
 			// move to the start of next line
@@ -713,6 +714,8 @@ public class TetrisView extends SurfaceView implements Callback {
 		_screenHeight = h;
 		_screenWidth = w;
 		_blockEdgeLength = _screenWidth / (MATRIX_WIDTH + PREVIEW_EDGE + 1);
+
+		_squareGapWidth = _blockEdgeLength / EDGE_GAP_RATIO;
 		_scoreBarPaint.setStrokeWidth(_blockEdgeLength / 4);
 		float scoreBarRight = _blockEdgeLength / 4 + MATRIX_WIDTH
 				* _blockEdgeLength;

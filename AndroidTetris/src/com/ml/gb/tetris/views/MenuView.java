@@ -94,6 +94,8 @@ public class MenuView extends SurfaceView implements Callback {
 
 	private Toast _promtToast;
 
+	private boolean _justCreated;
+
 	@SuppressLint("ShowToast")
 	public MenuView(Context context, AttributeSet attrs) {
 		super(context, attrs);
@@ -115,6 +117,8 @@ public class MenuView extends SurfaceView implements Callback {
 
 		// supress warning, show toast later
 		_promtToast = Toast.makeText(getContext(), "", Toast.LENGTH_SHORT);
+
+		_justCreated = true;
 
 	}
 
@@ -304,7 +308,10 @@ public class MenuView extends SurfaceView implements Callback {
 		_holder = holder;
 		resetHighlightBlock();
 		drawAll();
-		showPrompt(MSG_INCORRECT_TOUCH);
+		if (_justCreated) {
+			_justCreated = false;
+			showPrompt(MSG_INCORRECT_TOUCH);
+		}
 	}
 
 	public void clearToast() {
@@ -444,6 +451,7 @@ public class MenuView extends SurfaceView implements Callback {
 			if (_currentHighlightRect.contains((int) event.getX(),
 					(int) event.getY())) {
 				_isDragging = true;
+				_promtToast.cancel();
 			} else {
 				showPrompt(MSG_INCORRECT_TOUCH);
 			}

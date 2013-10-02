@@ -16,7 +16,6 @@ import android.graphics.Point;
 import android.graphics.Rect;
 import android.support.v4.view.MotionEventCompat;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.GestureDetector;
 import android.view.Gravity;
 import android.view.MotionEvent;
@@ -48,8 +47,6 @@ public class MenuView extends SurfaceView implements Callback {
 	private int _edgeGapWidth;
 	private static final int MENU_MATRIX_EDGE = 10;
 	private GestureDetector _gesDect;
-
-	private static String DEBUG_TAG = "MenuView";
 
 	private Paint _menuPaint;
 	private Paint _backgroundPaint;
@@ -96,6 +93,8 @@ public class MenuView extends SurfaceView implements Callback {
 
 	private boolean _justCreated;
 
+	public static final String TUTORIAL_INTENT_NAME = "enableTutorial";
+
 	@SuppressLint("ShowToast")
 	public MenuView(Context context, AttributeSet attrs) {
 		super(context, attrs);
@@ -125,7 +124,6 @@ public class MenuView extends SurfaceView implements Callback {
 	// record the size of the current view - note this is not full screen!
 	@Override
 	protected void onSizeChanged(int w, int h, int oldw, int oldh) {
-		Log.d(DEBUG_TAG, "onSizeChanged");
 		super.onSizeChanged(w, h, oldw, oldh);
 		_viewWidth = w;
 		_viewHeight = h;
@@ -369,8 +367,10 @@ public class MenuView extends SurfaceView implements Callback {
 		if (_currentBlockPoints.equals(_upperLeftCornerPoints)) {
 			_promtToast.cancel();
 			// start game
-			getContext().startActivity(
-					new Intent(getContext(), TetrisActivity.class));
+			Intent newGameIntent = new Intent(getContext(),
+					TetrisActivity.class);
+			newGameIntent.putExtra(TUTORIAL_INTENT_NAME, false);
+			getContext().startActivity(newGameIntent);
 		} else if (_currentBlockPoints.equals(_upperRightCornerPoints)) {
 			_promtToast.cancel();
 			// highscore
@@ -378,8 +378,10 @@ public class MenuView extends SurfaceView implements Callback {
 					new Intent(getContext(), HighScoreListActivity.class));
 		} else if (_currentBlockPoints.equals(_lowerLeftCornerPoints)) {
 			_promtToast.cancel();
-			// TODO: start game with turorial
-			Log.d(DEBUG_TAG, "should start game with tutorial");
+			Intent newGameWithTutorialIntent = new Intent(getContext(),
+					TetrisActivity.class);
+			newGameWithTutorialIntent.putExtra(TUTORIAL_INTENT_NAME, true);
+			getContext().startActivity(newGameWithTutorialIntent);
 		} else if (_currentBlockPoints.equals(_lowerRightCornerPoints)) {
 			_promtToast.cancel();
 			// exit

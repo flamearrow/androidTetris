@@ -9,7 +9,6 @@ public class MenuGestureListener extends SimpleOnGestureListener {
 	public static final int SCROLL_THRESHOLD = 20;
 	public static final int DIAGNAL_THRESHOLD = 5;
 	private MenuView _menuView;
-	private String LOG_TAG = "MenuGestureListener";
 
 	public MenuGestureListener(MenuView menuView) {
 		_menuView = menuView;

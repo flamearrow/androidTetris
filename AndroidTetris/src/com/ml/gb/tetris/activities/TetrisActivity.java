@@ -8,6 +8,7 @@ import android.view.MotionEvent;
 import com.ml.gb.R;
 import com.ml.gb.tetris.TetrisConstants;
 import com.ml.gb.tetris.listener.TetrisGestureListener;
+import com.ml.gb.tetris.views.MenuView;
 import com.ml.gb.tetris.views.TetrisView;
 
 public class TetrisActivity extends Activity {
@@ -23,7 +24,11 @@ public class TetrisActivity extends Activity {
 				TetrisConstants.TETRIS_SHAREDPREFENCES_NAME, MODE_PRIVATE));
 		// can also let TetrisActivity implements OnGestureListener, but that
 		// will leave some blank methods
-		_gesDect = new GestureDetector(this, new TetrisGestureListener(this));
+		boolean ttl = getIntent().getBooleanExtra(
+				MenuView.TUTORIAL_INTENT_NAME, false);
+		_gesDect = new GestureDetector(this, new TetrisGestureListener(this,
+				ttl));
+
 	}
 
 	// called when this method is sent background, should either pause the

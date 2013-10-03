@@ -22,4 +22,5 @@ public class MenuActivity extends Activity {
 		super.onPause();
 		_mV.clearToast();
 	}
+
 }

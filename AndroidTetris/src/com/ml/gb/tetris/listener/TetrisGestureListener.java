@@ -40,6 +40,10 @@ public class TetrisGestureListener extends SimpleOnGestureListener {
 		}
 	}
 
+	public void clearTutorialToast() {
+		_tutorialToast.cancel();
+	}
+
 	@Override
 	public boolean onDoubleTap(MotionEvent e) {
 		if (_tutorialEnabled) {

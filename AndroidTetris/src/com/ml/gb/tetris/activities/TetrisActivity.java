@@ -14,6 +14,7 @@ import com.ml.gb.tetris.views.TetrisView;
 public class TetrisActivity extends Activity {
 	private GestureDetector _gesDect;
 	private TetrisView _tetrisView;
+	private TetrisGestureListener _tetrisGestureListener;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -26,8 +27,8 @@ public class TetrisActivity extends Activity {
 		// will leave some blank methods
 		boolean ttl = getIntent().getBooleanExtra(
 				MenuView.TUTORIAL_INTENT_NAME, false);
-		_gesDect = new GestureDetector(this, new TetrisGestureListener(this,
-				ttl));
+		_tetrisGestureListener = new TetrisGestureListener(this, ttl);
+		_gesDect = new GestureDetector(this, _tetrisGestureListener);
 
 	}
 
@@ -37,6 +38,7 @@ public class TetrisActivity extends Activity {
 	protected void onPause() {
 		super.onPause();
 		_tetrisView.pause();
+		_tetrisGestureListener.clearTutorialToast();
 	}
 
 	public TetrisView getView() {

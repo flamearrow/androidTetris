@@ -41,7 +41,8 @@ public class TetrisGestureListener extends SimpleOnGestureListener {
 	}
 
 	public void clearTutorialToast() {
-		_tutorialToast.cancel();
+		if (_tutorialToast != null)
+			_tutorialToast.cancel();
 	}
 
 	@Override

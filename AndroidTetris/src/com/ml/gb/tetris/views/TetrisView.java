@@ -17,6 +17,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.Rect;
+import android.graphics.Typeface;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.Gravity;
@@ -55,12 +56,16 @@ public class TetrisView extends SurfaceView implements Callback {
 
 	private static final int BACKGROUND_COLOR = Color.WHITE;
 	private static final int FONT_COLOR = Color.BLACK;
+	private static final int FONT_SIZE = 25;
 	private static final int SQUARE_EDGE_COLOR = Color.WHITE;
 	private static final int SEPARATOR_COLOR = Color.GRAY;
 	private static final int SCORE_BAR_COLOR = Color.RED;
 	private static final int INITIAL_BLOCK_COLOR = Color.WHITE;
 	private static final int PREVIEW_DROPPED_BLOCK_COLOR = 0xFFEEEEEE;
-	public static final int HIGH_SCORE_MAX_COUNT = 3;
+	public static final int HIGH_SCORE_MAX_COUNT = 10;
+
+	private static final int BASE_SPEED = 1000;
+	private static final int SPEED_MULTIPLIER = 100;
 
 	private static final String INVALID_NAME_WARNING = "ERROR!\nname can't be null and shouldn't contain \""
 			+ TetrisConstants.NAME_SCORE_SEPERATOR + "\"";
@@ -199,6 +204,8 @@ public class TetrisView extends SurfaceView implements Callback {
 		_previewMatrixPaint = new Paint();
 		_separatorPaint = new Paint();
 		_statisticPaint = new Paint();
+		_statisticPaint.setTextSize(FONT_SIZE);
+		_statisticPaint.setTypeface(Typeface.create("SERIF", Typeface.BOLD));
 		_scoreBarPaint = new Paint();
 		_scoreBarPaint.setColor(SCORE_BAR_COLOR);
 		_currentBlockPoints = new HashSet<Point>();
@@ -1057,7 +1064,8 @@ public class TetrisView extends SurfaceView implements Callback {
 
 				// normal dropping, should wait for enough time span to draw
 				// if it's fast dropping we want to update every 100 milis
-				if ((elapsed < 1000 - _level * 50) && !_isFastDropping) {
+				if ((elapsed < BASE_SPEED - _level * SPEED_MULTIPLIER)
+						&& !_isFastDropping) {
 					continue;
 				}
 				try {

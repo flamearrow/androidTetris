@@ -460,7 +460,7 @@ public class TetrisView extends SurfaceView implements Callback {
 
 			if (_score >= _scoreToLevelUp) {
 				_level++;
-				_scoreToLevelUp = _level * SCORE_MULTIPLIER;
+				_scoreToLevelUp += _level * SCORE_MULTIPLIER;
 			}
 
 		}
@@ -783,6 +783,50 @@ public class TetrisView extends SurfaceView implements Callback {
 	}
 
 	public void updateDroppedLocation() {
+		synchronized (_holder) {
+			Point tmpPoint = new Point();
+			int probDeltaX = 0;
+			here: while (true) {
+				for (Point p : _currentBlockPoints) {
+					tmpPoint.set(p.x - probDeltaX, p.y);
+					// this point is occupied by the dropping block
+					if (_currentBlockPoints.contains(tmpPoint))
+						continue;
+					// if the current block already hit bottom, we will
+					// increment an additional line
+					// if we hit bottom boundary then stop probing
+					if (p.x - probDeltaX < 0
+							|| ((_gameMatrix[p.x - probDeltaX][p.y] != INITIAL_BLOCK_COLOR) && (_gameMatrix[p.x
+									- probDeltaX][p.y] != PREVIEW_DROPPED_BLOCK_COLOR))) {
+						probDeltaX--;
+						break here;
+					}
+				}
+				// otherwise continue probing down
+				probDeltaX++;
+			}
+			// now prbDeltaY is in place, need to set the preview block
+			// points, we need to first clear the previous preview block points
+			for (Point p : _currentPreviewBlockPoints) {
+				if (_gameMatrix[p.x][p.y] == PREVIEW_DROPPED_BLOCK_COLOR)
+					_gameMatrix[p.x][p.y] = INITIAL_BLOCK_COLOR;
+			}
+			_currentPreviewBlockPoints.clear();
+			for (Point p : _currentBlockPoints) {
+				tmpPoint.set(p.x - probDeltaX, p.y);
+				// if currentBlock overlaps with previewPoint, draw
+				// curentBlock
+				if (_currentBlockPoints.contains(tmpPoint))
+					continue;
+				// otherwise set this block to preview color
+				_currentPreviewBlockPoints
+						.add(new Point(p.x - probDeltaX, p.y));
+				_gameMatrix[tmpPoint.x][tmpPoint.y] = PREVIEW_DROPPED_BLOCK_COLOR;
+			}
+		}
+	}
+
+	public void updateDroppedLocationWithoutLock() {
 		Point tmpPoint = new Point();
 		int probDeltaX = 0;
 		here: while (true) {
@@ -940,7 +984,7 @@ public class TetrisView extends SurfaceView implements Callback {
 		addBlockToMatrix(_gameMatrix, MATRIX_HEIGHT - 1, 4, _currentBlock, true);
 
 		updateCurrentBlockPoints();
-		updateDroppedLocation();
+		updateDroppedLocationWithoutLock();
 
 		_nextBlock = getRandomBlock();
 		addBlockToMatrix(_previewMatrix, PREVIEW_EDGE - 1, 0, _nextBlock, false);

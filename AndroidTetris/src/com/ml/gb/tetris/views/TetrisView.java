@@ -514,7 +514,8 @@ public class TetrisView extends SurfaceView implements Callback {
 		for (int i = 0; i < 4; i++) {
 			for (int j = 0; j < 4; j++) {
 				// we find a collision, game over
-				if (colorMatrix[x - i][y + j] != INITIAL_BLOCK_COLOR) {
+				if (colorMatrix[x - i][y + j] != INITIAL_BLOCK_COLOR
+						&& colorMatrix[x - i][y + j] != PREVIEW_DROPPED_BLOCK_COLOR) {
 					return true;
 				} else if (((value >> (count++)) & 1) > 0) {
 					colorMatrix[x - i][y + j] = color;

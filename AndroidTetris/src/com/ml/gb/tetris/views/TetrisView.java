@@ -595,10 +595,6 @@ public class TetrisView extends SurfaceView implements Callback {
 						currentPoint.x + _blockEdgeLength - _squareGapWidth,
 						currentPoint.y - _squareGapWidth, _gameMatrixPaint);
 				currentPoint.offset(_blockEdgeLength, 0);
-				// if we just drew a preview block, need to reset its color
-				if (_gameMatrix[i][j] == PREVIEW_DROPPED_BLOCK_COLOR) {
-					_gameMatrix[i][j] = INITIAL_BLOCK_COLOR;
-				}
 
 			}
 			// move to the start of next line
@@ -749,11 +745,12 @@ public class TetrisView extends SurfaceView implements Callback {
 				if (_currentBlockPoints.contains(tmpPoint)) {
 					continue;
 				}
-				// if we hit boundary or the new block is already set then we
+				// if we hit boundary or the new block is already set or the new
+				// block is preview block then we
 				// can't
 				// continue dropping
 				if ((tmpPoint.x < 0 || tmpPoint.y < 0 || tmpPoint.y >= MATRIX_WIDTH)
-						|| (_gameMatrix[tmpPoint.x][tmpPoint.y] != INITIAL_BLOCK_COLOR)) {
+						|| ((_gameMatrix[tmpPoint.x][tmpPoint.y] != INITIAL_BLOCK_COLOR) && (_gameMatrix[tmpPoint.x][tmpPoint.y] != PREVIEW_DROPPED_BLOCK_COLOR))) {
 					succeed = false;
 					break;
 				}
@@ -775,8 +772,10 @@ public class TetrisView extends SurfaceView implements Callback {
 
 				_upperLeft.offset(delta.x, delta.y);
 
+				// we only update DroppedLocation when moving left/right
+				if (Math.abs(delta.y) > 0)
+					updateDroppedLocation();
 			}
-			updateDroppedLocation();
 
 			return succeed;
 		}
@@ -872,15 +871,11 @@ public class TetrisView extends SurfaceView implements Callback {
 	// ideally we should first check if it's eligible to move then set
 	// _shouldReDrawComponents = true
 	public void moveLeft() {
-		if (!_isFastDropping) {
-			_currentBlockMoved = moveCurrentBlock(new Point(0, -1));
-		}
+		_currentBlockMoved = moveCurrentBlock(new Point(0, -1));
 	}
 
 	public void moveRight() {
-		if (!_isFastDropping) {
-			_currentBlockMoved = moveCurrentBlock(new Point(0, 1));
-		}
+		_currentBlockMoved = moveCurrentBlock(new Point(0, 1));
 	}
 
 	/**
@@ -889,53 +884,50 @@ public class TetrisView extends SurfaceView implements Callback {
 	 * @return succeed or not
 	 */
 	public boolean rotate() {
-		if (!_isFastDropping) {
-			_currentBlock.rotate();
+		_currentBlock.rotate();
 
-			int count = 0;
-			int value = _currentBlock.getHexValue();
-			int color = _currentBlock.color;
-			Point tmpP = new Point(-1, -1);
+		int count = 0;
+		int value = _currentBlock.getHexValue();
+		int color = _currentBlock.color;
+		Point tmpP = new Point(-1, -1);
 
-			for (int i = _upperLeft.x; i > _upperLeft.x - 4; i--) {
-				for (int j = _upperLeft.y; j < _upperLeft.y + 4; j++) {
-					if (((value >> (count++)) & 1) > 0) {
-						tmpP.set(i, j);
-						// if it's outside of screen or it's already occupied
-						// then
-						// we can't rotate
+		for (int i = _upperLeft.x; i > _upperLeft.x - 4; i--) {
+			for (int j = _upperLeft.y; j < _upperLeft.y + 4; j++) {
+				if (((value >> (count++)) & 1) > 0) {
+					tmpP.set(i, j);
+					// if it's outside of screen or it's already occupied
+					// then
+					// we can't rotate
 
-						if (j < 0
-								|| j >= MATRIX_WIDTH
-								|| (!_currentBlockPoints.contains(tmpP) && _gameMatrix[i][j] != INITIAL_BLOCK_COLOR)) {
-							_currentBlock.rRotate();
-							return false;
-						}
+					if (j < 0
+							|| j >= MATRIX_WIDTH
+							|| (!_currentBlockPoints.contains(tmpP) && _gameMatrix[i][j] != INITIAL_BLOCK_COLOR)) {
+						_currentBlock.rRotate();
+						return false;
 					}
 				}
 			}
+		}
 
-			// safe to update now, needs to be reDrawn immediately
-			for (Point p : _currentBlockPoints) {
-				_gameMatrix[p.x][p.y] = INITIAL_BLOCK_COLOR;
-			}
+		// safe to update now, needs to be reDrawn immediately
+		for (Point p : _currentBlockPoints) {
+			_gameMatrix[p.x][p.y] = INITIAL_BLOCK_COLOR;
+		}
 
-			_currentBlockPoints.clear();
-			count = 0;
-			for (int i = _upperLeft.x; i > _upperLeft.x - 4; i--) {
-				for (int j = _upperLeft.y; j < _upperLeft.y + 4; j++) {
-					if (((value >> (count++)) & 1) > 0) {
-						_gameMatrix[i][j] = color;
-						_currentBlockPoints.add(new Point(i, j));
-					}
+		_currentBlockPoints.clear();
+		count = 0;
+		for (int i = _upperLeft.x; i > _upperLeft.x - 4; i--) {
+			for (int j = _upperLeft.y; j < _upperLeft.y + 4; j++) {
+				if (((value >> (count++)) & 1) > 0) {
+					_gameMatrix[i][j] = color;
+					_currentBlockPoints.add(new Point(i, j));
 				}
 			}
-			updateDroppedLocation();
-			_currentBlockMoved = true;
+		}
+		updateDroppedLocation();
+		_currentBlockMoved = true;
 
-			return true;
-		} else
-			return false;
+		return true;
 	}
 
 	@Override
@@ -944,7 +936,7 @@ public class TetrisView extends SurfaceView implements Callback {
 		// once the thread is setRunning(false) the for loop will end the
 		// thread, therefore we need to create a new thread
 
-		_thread = new TetrisThread(holder);
+		_thread = new TetrisThread(_holder);
 		_thread.setRunning(true);
 		_thread.start();
 	}
@@ -954,7 +946,7 @@ public class TetrisView extends SurfaceView implements Callback {
 		initializeMatrix();
 		if (_gameOver) {
 			_gameOver = false;
-			_thread = new TetrisThread(getHolder());
+			_thread = new TetrisThread(_holder);
 			_thread.setRunning(true);
 			_thread.start();
 		}

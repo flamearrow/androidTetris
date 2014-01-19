@@ -939,7 +939,6 @@ public class TetrisView extends SurfaceView implements Callback {
 		_holder = holder;
 		// once the thread is setRunning(false) the for loop will end the
 		// thread, therefore we need to create a new thread
-
 		_thread = new TetrisThread(_holder);
 		_thread.setRunning(true);
 		_thread.start();
@@ -1076,9 +1075,21 @@ public class TetrisView extends SurfaceView implements Callback {
 				if (_currentBlockMoved) {
 					try {
 						canvas = _myHolder.lockCanvas(_gameMatrixRect);
-						synchronized (_myHolder) {
-							drawGameBlocks(canvas);
+						// _gameMatrixRect is enlarged, repaint the entire
+						// screen and resize _gameMatrixRect
+						if (_gameMatrixRect.right != MATRIX_WIDTH
+								* _blockEdgeLength) {
+							_gameMatrixRect.set(0, 0, MATRIX_WIDTH
+									* _blockEdgeLength, _screenHeight);
+							synchronized (_myHolder) {
+								drawComponents(canvas);
+							}
 						}
+						// otherwise just repaint game blocks
+						else
+							synchronized (_myHolder) {
+								drawGameBlocks(canvas);
+							}
 					} finally {
 						if (canvas != null) {
 							_myHolder.unlockCanvasAndPost(canvas);

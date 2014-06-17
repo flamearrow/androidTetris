@@ -5,7 +5,7 @@ public class NameScorePair implements Comparable<NameScorePair> {
 	int score;
 
 	public String getName() {
-		return name;
+		return name; 
 	}
 
 	public int getScore() {

@@ -50,13 +50,18 @@ public class TetrisGestureListener extends SimpleOnGestureListener {
 		if (_tutorialEnabled) {
 			if (hasDoneThese(LEFT_SWIPED, RIGHT_SWIPED, UP_SWIPED)) {
 				addMask(DOUBLE_TAPPED);
-				_tetrisView.setFastDropping();
+//				_tetrisView.setFastDropping();
+
+				_tetrisView.requestFastDrop();
+
 				checkTutorialEnd();
 			} else {
 				_tutorialToast.show();
 			}
 		} else {
-			_tetrisView.setFastDropping();
+//			_tetrisView.setFastDropping();
+
+			_tetrisView.requestFastDrop();
 		}
 		return false;
 	}
@@ -85,20 +90,26 @@ public class TetrisGestureListener extends SimpleOnGestureListener {
 				if (_tutorialEnabled) {
 					if (hasDoneThese(LEFT_SWIPED, RIGHT_SWIPED, UP_SWIPED)) {
 						addMask(DOWN_SWIPED);
-						_tetrisView.setFastDropping();
+//						_tetrisView.setFastDropping();
+
+						_tetrisView.requestFastDrop();
 						checkTutorialEnd();
 					} else {
 						_tutorialToast.show();
 						return false;
 					}
 				} else {
-					_tetrisView.setFastDropping();
+//					_tetrisView.setFastDropping();
+
+					_tetrisView.requestFastDrop();
 				}
 			} else if (diffY < 0)
 				if (_tutorialEnabled) {
 					if (hasDoneThese(LEFT_SWIPED, RIGHT_SWIPED)) {
 						addMask(UP_SWIPED);
-						_tetrisView.rotate();
+//						_tetrisView.rotate();
+
+						_tetrisView.requestRotate();
 						if (hasDoneThese(LEFT_SWIPED, RIGHT_SWIPED, UP_SWIPED)) {
 							if (hasNotDoneThis(DOUBLE_TAPPED)
 									&& hasNotDoneThis(DOWN_SWIPED)) {
@@ -112,7 +123,9 @@ public class TetrisGestureListener extends SimpleOnGestureListener {
 						return false;
 					}
 				} else {
-					_tetrisView.rotate();
+//					_tetrisView.rotate();
+
+					_tetrisView.requestRotate();
 				}
 
 		}
@@ -128,7 +141,9 @@ public class TetrisGestureListener extends SimpleOnGestureListener {
 			if (distanceX > 0) {
 				if (_tutorialEnabled) {
 					addMask(LEFT_SWIPED);
-					_tetrisView.moveLeft();
+//					_tetrisView.moveLeft();
+
+					_tetrisView.requestMoveLeft();
 					if (hasDoneThese(LEFT_SWIPED, RIGHT_SWIPED)) {
 						if (hasNotDoneThis(UP_SWIPED)) {
 							showTutorial(TUTORIAL_SWIPE_UP);
@@ -137,12 +152,16 @@ public class TetrisGestureListener extends SimpleOnGestureListener {
 						}
 					}
 				} else {
-					_tetrisView.moveLeft();
+//					_tetrisView.moveLeft();
+
+					_tetrisView.requestMoveLeft();
 				}
 			} else {
 				if (_tutorialEnabled) {
 					addMask(RIGHT_SWIPED);
-					_tetrisView.moveRight();
+//					_tetrisView.moveRight();
+
+					_tetrisView.requestMoveRight();
 					if (hasDoneThese(LEFT_SWIPED, RIGHT_SWIPED)) {
 						if (hasNotDoneThis(UP_SWIPED)) {
 							showTutorial(TUTORIAL_SWIPE_UP);
@@ -151,7 +170,9 @@ public class TetrisGestureListener extends SimpleOnGestureListener {
 						}
 					}
 				} else {
-					_tetrisView.moveRight();
+//					_tetrisView.moveRight();
+
+					_tetrisView.requestMoveRight();
 				}
 
 			}

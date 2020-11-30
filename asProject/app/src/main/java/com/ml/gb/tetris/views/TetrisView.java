@@ -943,8 +943,8 @@ public class TetrisView extends SurfaceView implements Callback {
     }
 
     /**
-     * This Handler runs off of main, all UI actions needs to post back to main? or no
-     * It only handles the drawing event
+     * This Handler runs off of main, no need to post UI events back to main as we're using
+     * SurfaceView
      */
     private class TetrisHandler extends Handler {
         TetrisHandler(Looper looper) {
